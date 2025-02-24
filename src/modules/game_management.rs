@@ -1,6 +1,7 @@
 use crate::modules::entities;
 use rand::seq::SliceRandom;
 use rand::{rng, Rng};
+use serde_yaml;
 
 #[derive(Debug)]
 pub struct PlayerHand {
@@ -32,21 +33,36 @@ impl RemainingDeck {
 }
 
 pub fn get_intial_deck() -> Result<(PlayerHand, RemainingDeck), Box<dyn std::error::Error>> {
-    let mut philosophers = entities::get_philosopher_set()?;
+    let mut philosophers = get_philosopher_cards()?;
     let random_index = rng().random_range(0..philosophers.len());
     let initial_philosopher = philosophers.remove(random_index);
     let player_hand = PlayerHand {
         active_card: None,
-        inactive_cards: vec![Box::new(initial_philosopher)],
+        inactive_cards: vec![initial_philosopher],
     };
-    // let player1 = entities::InPlayPhilosopher::new(chosen_philosopher);
-    //let actions: Vec<Action> = entities::get_actions();
-    let remaining_philosophers: Vec<Box<dyn entities::Card>> = philosophers
+    let actions = get_action_cards()?;
+    let remaining_deck = RemainingDeck {
+        cards: [philosophers, actions].concat(),
+    };
+    Ok((player_hand, remaining_deck))
+}
+
+fn get_philosopher_cards() -> Result<Vec<Box<dyn entities::Card>>, Box<dyn std::error::Error>> {
+    let f = std::fs::File::open("./assets/philosophers.yaml")?;
+    let d: Vec<entities::Philosopher> = serde_yaml::from_reader(f)?;
+    let philosopher_cards: Vec<Box<dyn entities::Card>> = d
         .into_iter()
         .map(|p| Box::new(p) as Box<dyn entities::Card>)
         .collect();
-    let remaining_deck = RemainingDeck {
-        cards: remaining_philosophers,
-    };
-    Ok((player_hand, remaining_deck))
+    Ok(philosopher_cards)
+}
+
+fn get_action_cards() -> Result<Vec<Box<dyn entities::Card>>, Box<dyn std::error::Error>> {
+    let f = std::fs::File::open("./assets/actions.yaml")?;
+    let d: Vec<entities::Action> = serde_yaml::from_reader(f)?;
+    let action_cards: Vec<Box<dyn entities::Card>> = d
+        .into_iter()
+        .map(|a| Box::new(a) as Box<dyn entities::Card>)
+        .collect();
+    Ok(action_cards)
 }

@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use serde_yaml;
 use std::fmt::Debug;
 
 pub trait Card: Debug {
@@ -47,12 +46,6 @@ impl Card for Action {
     }
 }
 
-pub fn get_actions() -> Result<Vec<Action>, Box<dyn std::error::Error>> {
-    let f = std::fs::File::open("./assets/actions.yaml")?;
-    let actions = serde_yaml::from_reader(f)?;
-    Ok(actions)
-}
-
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Philosopher {
     name: String,
@@ -69,12 +62,6 @@ impl Card for Philosopher {
         println!("playing philosopher: {:?}", &self.name)
         // this should produce an InPlayPhilosopher
     }
-}
-
-pub fn get_philosopher_set() -> Result<Vec<Philosopher>, Box<dyn std::error::Error>> {
-    let f = std::fs::File::open("./assets/philosophers.yaml")?;
-    let d: Vec<Philosopher> = serde_yaml::from_reader(f)?;
-    Ok(d)
 }
 
 #[derive(Debug)]
