@@ -1,7 +1,8 @@
 use serde::{Deserialize, Serialize};
 use serde_yaml;
+use std::fmt::Debug;
 
-trait Card {
+pub trait Card: Debug {
     fn get_name(&self) -> &str;
     // fn get_cost(&self) -> u32;
     fn play(&self);
@@ -60,6 +61,15 @@ pub struct Philosopher {
     // base_defence: u8,
     // base_attack: u8,
 }
+impl Card for Philosopher {
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+    fn play(&self) {
+        println!("playing philosopher: {:?}", &self.name)
+        // this should produce an InPlayPhilosopher
+    }
+}
 
 pub fn get_philosopher_set() -> Result<Vec<Philosopher>, Box<dyn std::error::Error>> {
     let f = std::fs::File::open("./assets/philosophers.yaml")?;
@@ -68,14 +78,14 @@ pub fn get_philosopher_set() -> Result<Vec<Philosopher>, Box<dyn std::error::Err
 }
 
 #[derive(Debug)]
-pub struct InPlayPhilosopher<'a> {
-    pub philosopher: &'a Philosopher,
+pub struct InPlayPhilosopher {
+    pub philosopher: Philosopher,
     pub current_damage: u8,
     pub modifiers: Option<Vec<Effect>>,
 }
 
-impl<'a> InPlayPhilosopher<'a> {
-    pub fn new(philosopher: &'a Philosopher) -> Self {
+impl InPlayPhilosopher {
+    pub fn new(philosopher: Philosopher) -> Self {
         InPlayPhilosopher {
             philosopher,
             current_damage: 0,
@@ -84,7 +94,7 @@ impl<'a> InPlayPhilosopher<'a> {
     }
 
     pub fn with_state(
-        philosopher: &'a Philosopher,
+        philosopher: Philosopher,
         current_damage: u8,
         modifiers: Option<Vec<Effect>>,
     ) -> Self {
@@ -93,5 +103,15 @@ impl<'a> InPlayPhilosopher<'a> {
             current_damage,
             modifiers,
         }
+    }
+}
+
+impl Card for InPlayPhilosopher {
+    fn get_name(&self) -> &str {
+        &self.philosopher.name
+    }
+    fn play(&self) {
+        println!("philosopher already in play {:?}", &self.philosopher.name)
+        // this should be a default action?
     }
 }
