@@ -1,0 +1,40 @@
+- name: 'Logical Argumentation'
+  description: "You can't handle the truth"
+  school: Rationalist
+  ability_type:
+    kind: DamageOverTime
+    damage: 1
+    duration: 5
+- name: 'Abstract thought'
+  description: "Let's transcend the physical realm"
+  school: Rationalist
+  ability_type:
+    kind: HealOverTime
+    heal: 2
+    duration: 2
+- name: 'Scientific Observation'
+  description: "I deduce that your arguments are weak"
+  school: Empiricist
+  ability_type:
+    kind: Damage
+    damage: 5
+- name: 'Focus on sensory input'
+  description: "Let's look at the data"
+  school: Empiricist
+  ability_type:
+    kind: Heal
+    heal: 3
+- name: 'Radical Doubt'
+  description: "Are you sure??"
+  school: Skeptic
+  ability_type:
+    kind: DamageOverTime
+    damage: 2
+    duration: 3
+- name: 'Suspension of Belief'
+  description: ".... ?"
+  school: Skeptic
+  ability_type:
+    kind: HealOverTime
+    heal: 1
+    duration: 3

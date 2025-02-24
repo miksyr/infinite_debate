@@ -1,6 +1,12 @@
 use serde::{Deserialize, Serialize};
 use serde_yaml;
 
+trait Card {
+    fn get_name(&self) -> &str;
+    // fn get_cost(&self) -> u32;
+    fn play(&self);
+}
+
 #[derive(Debug, Deserialize, Serialize)]
 enum CoreSchool {
     Rationalist,
@@ -9,7 +15,7 @@ enum CoreSchool {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-enum Effect {
+pub enum Effect {
     Poison,
     Weakness,
 }
@@ -24,11 +30,26 @@ enum AbilityType {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
-struct Action {
+pub struct Action {
     name: String,
     description: String,
+    school: CoreSchool,
     ability_type: AbilityType,
     additional_effects: Option<Vec<Effect>>,
+}
+impl Card for Action {
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+    fn play(&self) {
+        println!("playing action: {}", &self.name)
+    }
+}
+
+pub fn get_actions() -> Result<Vec<Action>, Box<dyn std::error::Error>> {
+    let f = std::fs::File::open("./assets/actions.yaml")?;
+    let actions = serde_yaml::from_reader(f)?;
+    Ok(actions)
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -36,9 +57,8 @@ pub struct Philosopher {
     name: String,
     school: CoreSchool,
     starting_health: u8,
-    action_set: Vec<Action>,
-    // defence: u8,
-    // attack: u8,
+    // base_defence: u8,
+    // base_attack: u8,
 }
 
 pub fn get_philosopher_set() -> Result<Vec<Philosopher>, Box<dyn std::error::Error>> {
@@ -47,8 +67,31 @@ pub fn get_philosopher_set() -> Result<Vec<Philosopher>, Box<dyn std::error::Err
     Ok(d)
 }
 
-pub struct InPlayPhilosopher {
-    philosopher: Philosopher,
-    current_damage: u8,
-    modifiers: Option<Vec<Effect>>,
+#[derive(Debug)]
+pub struct InPlayPhilosopher<'a> {
+    pub philosopher: &'a Philosopher,
+    pub current_damage: u8,
+    pub modifiers: Option<Vec<Effect>>,
+}
+
+impl<'a> InPlayPhilosopher<'a> {
+    pub fn new(philosopher: &'a Philosopher) -> Self {
+        InPlayPhilosopher {
+            philosopher,
+            current_damage: 0,
+            modifiers: None,
+        }
+    }
+
+    pub fn with_state(
+        philosopher: &'a Philosopher,
+        current_damage: u8,
+        modifiers: Option<Vec<Effect>>,
+    ) -> Self {
+        InPlayPhilosopher {
+            philosopher,
+            current_damage,
+            modifiers,
+        }
+    }
 }
