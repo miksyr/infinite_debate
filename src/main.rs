@@ -1,4 +1,3 @@
-use infinite_debate::modules::entities;
 use infinite_debate::modules::game_management;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -7,9 +6,5 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{:?}\n", remaining_cards);
     let next_cards = remaining_cards.draw_new_cards(2).unwrap();
     println!("next: {:?}\n", next_cards);
-    let actions = entities::get_actions()?;
-    for a in actions {
-        println!("{:?}\n", a)
-    }
     Ok(())
 }

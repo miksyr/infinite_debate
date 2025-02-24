@@ -16,7 +16,7 @@ pub struct RemainingDeck {
 impl RemainingDeck {
     pub fn new(mut cards: Vec<Box<dyn entities::Card>>) -> Self {
         cards.shuffle(&mut rng());
-        RemainingDeck { cards: cards }
+        RemainingDeck { cards }
     }
     pub fn remaining_cards(&self) -> u8 {
         self.cards.len().try_into().unwrap()
@@ -41,9 +41,10 @@ pub fn get_intial_deck() -> Result<(PlayerHand, RemainingDeck), Box<dyn std::err
         inactive_cards: vec![initial_philosopher],
     };
     let actions = get_action_cards()?;
-    let remaining_deck = RemainingDeck {
-        cards: [philosophers, actions].concat(),
-    };
+    let mut remaining_deck_cards = philosophers;
+    remaining_deck_cards.extend(actions);
+
+    let remaining_deck = RemainingDeck::new(remaining_deck_cards);
     Ok((player_hand, remaining_deck))
 }
 
