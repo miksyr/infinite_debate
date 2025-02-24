@@ -1,5 +1,6 @@
 use crate::modules::entities;
-use rand::Rng;
+use rand::seq::SliceRandom;
+use rand::{rng, Rng};
 
 #[derive(Debug)]
 pub struct PlayerHand {
@@ -11,10 +12,28 @@ pub struct PlayerHand {
 pub struct RemainingDeck {
     cards: Vec<Box<dyn entities::Card>>,
 }
+impl RemainingDeck {
+    pub fn new(mut cards: Vec<Box<dyn entities::Card>>) -> Self {
+        cards.shuffle(&mut rng());
+        RemainingDeck { cards: cards }
+    }
+    pub fn remaining_cards(&self) -> u8 {
+        self.cards.len().try_into().unwrap()
+    }
+    pub fn draw_new_cards(
+        &mut self,
+        n: u8,
+    ) -> Result<Vec<Box<dyn entities::Card>>, Box<dyn std::error::Error>> {
+        let n: u8 = n.min(self.remaining_cards());
+        let selected_cards: Vec<Box<dyn entities::Card>> =
+            self.cards.drain(0..n as usize).collect();
+        Ok(selected_cards)
+    }
+}
 
 pub fn get_intial_deck() -> Result<(PlayerHand, RemainingDeck), Box<dyn std::error::Error>> {
     let mut philosophers = entities::get_philosopher_set()?;
-    let random_index = rand::rng().random_range(0..philosophers.len());
+    let random_index = rng().random_range(0..philosophers.len());
     let initial_philosopher = philosophers.remove(random_index);
     let player_hand = PlayerHand {
         active_card: None,
