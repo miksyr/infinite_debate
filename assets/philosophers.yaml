@@ -1,0 +1,46 @@
+- name: Plato
+  school: Rationalist
+  starting_health: 10
+  action_set: 
+    - name: 'Logical Argumentation'
+      description: "You can't handle the truth"
+      ability_type:
+        kind: DamageOverTime
+        damage: 1
+        duration: 5
+    - name: 'Abstract thought'
+      description: "Let's transcend the physical realm"
+      ability_type:
+        kind: HealOverTime
+        heal: 2
+        duration: 2
+- name: Aristotle
+  school: Empiricist
+  starting_health: 12
+  action_set:
+    - name: 'Scientific Observation'
+      description: "I deduce that your arguments are weak"
+      ability_type:
+        kind: Damage
+        damage: 5
+    - name: 'Focus on sensory input'
+      description: "Let's look at the data"
+      ability_type:
+        kind: Heal
+        heal: 3
+- name: Pyrrho
+  school: Skeptic
+  starting_health: 11
+  action_set:
+    - name: 'Radical Doubt'
+      description: "Are you sure??"
+      ability_type:
+        kind: DamageOverTime
+        damage: 2
+        duration: 3
+    - name: 'Suspension of Belief'
+      description: ".... ?"
+      ability_type:
+        kind: HealOverTime
+        heal: 1
+        duration: 3
