@@ -5,7 +5,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let game_app = rendering::GameApp::new();
     let terminal = ratatui::init();
     let app_result = game_app.run(terminal);
-
+    ratatui::restore();
     //let game_board = game_management::GameBoard::new();
     //println!("{:?}\n\n", game_board);
 
