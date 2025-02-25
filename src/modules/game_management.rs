@@ -5,8 +5,31 @@ use serde_yaml;
 
 #[derive(Debug)]
 pub struct PlayerHand {
-    active_card: Option<entities::InPlayPhilosopher>,
+    active_philosophers: (
+        Option<entities::InPlayPhilosopher>,
+        Option<entities::InPlayPhilosopher>,
+    ),
     inactive_cards: Vec<Box<dyn entities::Card>>,
+}
+
+#[derive(Debug)]
+pub struct GameBoard {
+    player_1_hand: PlayerHand,
+    player_1_deck: RemainingDeck,
+    player_2_hand: PlayerHand,
+    player_2_deck: RemainingDeck,
+}
+impl GameBoard {
+    pub fn new() -> Self {
+        let (p1_start_hand, p1_deck) = get_intial_deck().expect("Can't get player1 hand");
+        let (p2_start_hand, p2_deck) = get_intial_deck().expect("Can't get player2 hand");
+        GameBoard {
+            player_1_hand: p1_start_hand,
+            player_1_deck: p1_deck,
+            player_2_hand: p2_start_hand,
+            player_2_deck: p2_deck,
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -18,14 +41,14 @@ impl RemainingDeck {
         cards.shuffle(&mut rng());
         RemainingDeck { cards }
     }
-    pub fn remaining_cards(&self) -> u8 {
+    pub fn num_remaining_cards(&self) -> u8 {
         self.cards.len().try_into().unwrap()
     }
     pub fn draw_new_cards(
         &mut self,
         n: u8,
     ) -> Result<Vec<Box<dyn entities::Card>>, Box<dyn std::error::Error>> {
-        let n: u8 = n.min(self.remaining_cards());
+        let n: u8 = n.min(self.num_remaining_cards());
         let selected_cards: Vec<Box<dyn entities::Card>> =
             self.cards.drain(0..n as usize).collect();
         Ok(selected_cards)
@@ -37,7 +60,7 @@ pub fn get_intial_deck() -> Result<(PlayerHand, RemainingDeck), Box<dyn std::err
     let random_index = rng().random_range(0..philosophers.len());
     let initial_philosopher = philosophers.remove(random_index);
     let player_hand = PlayerHand {
-        active_card: None,
+        active_philosophers: (None, None),
         inactive_cards: vec![initial_philosopher],
     };
     let actions = get_action_cards()?;
