@@ -62,8 +62,8 @@ impl GameApp {
 
     fn render_opponent_philosophers(&mut self, area: Rect, buf: &mut Buffer) {
         //  TODO: put actual logic here
-        let block = Block::bordered().title(Line::raw("TODO List").centered());
-        Paragraph::new("Opponent Philosophers")
+        let block = Block::bordered().title(Line::raw("Opponent Philosophers").centered());
+        Paragraph::new("Put stuff here")
             .centered()
             .block(block)
             .render(area, buf);
@@ -71,8 +71,8 @@ impl GameApp {
 
     fn render_player_philosophers(&mut self, area: Rect, buf: &mut Buffer) {
         //  TODO: put actual logic here
-        let block = Block::bordered().title(Line::raw("TODO List").centered());
-        Paragraph::new("Player Philosophers")
+        let block = Block::bordered().title(Line::raw("Player Philosophers").centered());
+        Paragraph::new("Put stuff here")
             .centered()
             .block(block)
             .render(area, buf);
@@ -80,8 +80,8 @@ impl GameApp {
 
     fn render_available_cards(&mut self, area: Rect, buf: &mut Buffer) {
         //  TODO: put actual logic here
-        let block = Block::bordered().title(Line::raw("TODO List").centered());
-        Paragraph::new("Player Available Cards")
+        let block = Block::bordered().title(Line::raw("Player Available Cards").centered());
+        Paragraph::new("Put stuff here")
             .centered()
             .block(block)
             .render(area, buf);
