@@ -12,7 +12,7 @@ use super::{entities, game_management::GameBoard};
 pub struct GameApp {
     exit: bool,
     game_board: GameBoard,
-    round: u32,
+    current_round: u32,
 }
 
 struct AvailablePlayerCards {
@@ -25,7 +25,7 @@ impl GameApp {
         GameApp {
             exit: false,
             game_board: GameBoard::new(),
-            round: 0,
+            current_round: 0,
         }
     }
 
@@ -93,7 +93,7 @@ impl Widget for &mut GameApp {
         let [game_board_area, footer_area] =
             Layout::vertical([Constraint::Fill(1), Constraint::Length(1)]).areas(area);
 
-        let [opponent_philosophers, player_philosophers, player_available_cards] =
+        let [opponent_philosopher, player_philosopher, player_available_cards] =
             Layout::vertical([
                 Constraint::Ratio(1, 4),
                 Constraint::Ratio(1, 4),
@@ -102,8 +102,8 @@ impl Widget for &mut GameApp {
             .areas(game_board_area);
 
         GameApp::render_footer(footer_area, buf);
-        self.render_opponent_philosophers(opponent_philosophers, buf);
-        self.render_player_philosophers(player_philosophers, buf);
+        self.render_opponent_philosophers(opponent_philosopher, buf);
+        self.render_player_philosophers(player_philosopher, buf);
         self.render_available_cards(player_available_cards, buf);
     }
 }

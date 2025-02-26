@@ -3,13 +3,25 @@ use rand::seq::SliceRandom;
 use rand::{rng, Rng};
 use serde_yaml;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct PlayerHand {
-    active_philosophers: (
-        Option<entities::InPlayPhilosopher>,
-        Option<entities::InPlayPhilosopher>,
-    ),
+    active_philosopher: Option<entities::InPlayPhilosopher>,
     inactive_cards: Vec<Box<dyn entities::Card>>,
+}
+impl PlayerHand {
+    pub fn add_cards_to_hand(&mut self, cards: Vec<Box<dyn entities::Card>>) {
+        self.inactive_cards.extend(cards);
+    }
+
+    pub fn play_philosopher(&mut self, philosopher_card: entities::Philosopher) {
+        self.active_philosopher = Some(entities::InPlayPhilosopher::new(philosopher_card));
+    }
+}
+
+#[derive(Debug)]
+pub enum PlayerTurn {
+    Player1,
+    Player2,
 }
 
 #[derive(Debug)]
@@ -18,6 +30,7 @@ pub struct GameBoard {
     player_1_deck: RemainingDeck,
     player_2_hand: PlayerHand,
     player_2_deck: RemainingDeck,
+    player_turn: PlayerTurn,
 }
 impl GameBoard {
     pub fn new() -> Self {
@@ -28,12 +41,13 @@ impl GameBoard {
             player_1_deck: p1_deck,
             player_2_hand: p2_start_hand,
             player_2_deck: p2_deck,
+            player_turn: PlayerTurn::Player1,
         }
     }
 }
 
 #[derive(Debug)]
-pub struct RemainingDeck {
+struct RemainingDeck {
     cards: Vec<Box<dyn entities::Card>>,
 }
 impl RemainingDeck {
@@ -55,12 +69,12 @@ impl RemainingDeck {
     }
 }
 
-pub fn get_intial_deck() -> Result<(PlayerHand, RemainingDeck), Box<dyn std::error::Error>> {
+fn get_intial_deck() -> Result<(PlayerHand, RemainingDeck), Box<dyn std::error::Error>> {
     let mut philosophers = get_philosopher_cards()?;
     let random_index = rng().random_range(0..philosophers.len());
     let initial_philosopher = philosophers.remove(random_index);
     let player_hand = PlayerHand {
-        active_philosophers: (None, None),
+        active_philosopher: None,
         inactive_cards: vec![initial_philosopher],
     };
     let actions = get_action_cards()?;
