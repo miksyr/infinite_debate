@@ -2,9 +2,15 @@ use ratatui::{
     buffer::Buffer,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
     layout::{Constraint, Layout, Rect},
+    style::{
+        palette::tailwind::{GREEN, SLATE},
+        Color, Modifier, Style,
+    },
     text::Line,
-    widgets::{Block, ListState, Paragraph, Widget},
-    DefaultTerminal, Frame,
+    widgets::{
+        Block, HighlightSpacing, List, ListItem, ListState, Paragraph, StatefulWidget, Widget,
+    },
+    DefaultTerminal,
 };
 
 use super::{entities, game_management::GameBoard};
@@ -15,9 +21,34 @@ pub struct GameApp {
     current_round: u32,
 }
 
-struct AvailablePlayerCards {
-    cards: Box<dyn entities::Card>,
-    state: ListState,
+// how to convert Card into ListItem (for display)
+const TEXT_FG_COLOR: Color = SLATE.c200;
+const COMPLETED_TEXT_FG_COLOR: Color = GREEN.c500;
+const SELECTED_STYLE: Style = Style::new().bg(SLATE.c800).add_modifier(Modifier::BOLD);
+
+impl<'a> From<&'a AvailablePlayerCard<'a>> for ListItem<'a> {
+    fn from(value: &'a AvailablePlayerCard<'a>) -> Self {
+        let line = match value.is_selected {
+            CardSelectionState::NotSelected => {
+                Line::styled(format!(" ☐ {}", value.card.get_name()), TEXT_FG_COLOR)
+            }
+            CardSelectionState::Selected => Line::styled(
+                format!(" ✓ {}", value.card.get_name()),
+                COMPLETED_TEXT_FG_COLOR,
+            ),
+        };
+        ListItem::new(line)
+    }
+}
+
+enum CardSelectionState {
+    Selected,
+    NotSelected,
+}
+
+struct AvailablePlayerCard<'a> {
+    card: &'a dyn entities::Card,
+    is_selected: CardSelectionState,
 }
 
 impl GameApp {
@@ -63,28 +94,52 @@ impl GameApp {
     fn render_opponent_philosophers(&mut self, area: Rect, buf: &mut Buffer) {
         //  TODO: put actual logic here
         let block = Block::bordered().title(Line::raw("Opponent Philosophers").centered());
-        Paragraph::new("Put stuff here")
-            .centered()
-            .block(block)
-            .render(area, buf);
+        Paragraph::new(format!(
+            "{:?}",
+            self.game_board.player_2_hand.active_philosopher
+        ))
+        .centered()
+        .block(block)
+        .render(area, buf);
     }
 
     fn render_player_philosophers(&mut self, area: Rect, buf: &mut Buffer) {
         //  TODO: put actual logic here
         let block = Block::bordered().title(Line::raw("Player Philosophers").centered());
-        Paragraph::new("Put stuff here")
-            .centered()
-            .block(block)
-            .render(area, buf);
+        Paragraph::new(format!(
+            "{:?}",
+            self.game_board.player_1_hand.active_philosopher
+        ))
+        .centered()
+        .block(block)
+        .render(area, buf);
     }
 
     fn render_available_cards(&mut self, area: Rect, buf: &mut Buffer) {
         //  TODO: put actual logic here
         let block = Block::bordered().title(Line::raw("Player Available Cards").centered());
-        Paragraph::new("Put stuff here")
-            .centered()
+        let available_cards: Vec<AvailablePlayerCard> = self
+            .game_board
+            .player_1_hand
+            .inactive_cards
+            .iter()
+            .map(|card| AvailablePlayerCard {
+                card: card.as_ref(),
+                is_selected: CardSelectionState::NotSelected,
+            })
+            .collect();
+        let list_items: Vec<ListItem> = available_cards
+            .iter()
+            .map(|card| ListItem::from(card))
+            .collect();
+        let list = List::new(list_items)
             .block(block)
-            .render(area, buf);
+            .highlight_style(SELECTED_STYLE)
+            .highlight_symbol(">")
+            .highlight_spacing(HighlightSpacing::Always);
+
+        // this list state should contain whether a card is selected or not
+        StatefulWidget::render(list, area, buf, &mut ListState::default());
     }
 }
 

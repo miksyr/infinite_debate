@@ -5,32 +5,49 @@ use serde_yaml;
 
 #[derive(Debug, Default)]
 pub struct PlayerHand {
-    active_philosopher: Option<entities::InPlayPhilosopher>,
-    inactive_cards: Vec<Box<dyn entities::Card>>,
+    pub active_philosopher: Option<entities::InPlayPhilosopher>,
+    pub inactive_cards: Vec<Box<dyn entities::Card>>,
 }
 impl PlayerHand {
-    pub fn add_cards_to_hand(&mut self, cards: Vec<Box<dyn entities::Card>>) {
+    pub fn add_cards_to_hand(
+        &mut self,
+        cards: Vec<Box<dyn entities::Card>>,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         self.inactive_cards.extend(cards);
+        Ok(())
     }
 
-    pub fn play_philosopher(&mut self, philosopher_card: entities::Philosopher) {
+    pub fn play_philosopher(
+        &mut self,
+        philosopher_card: entities::Philosopher,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         self.active_philosopher = Some(entities::InPlayPhilosopher::new(philosopher_card));
+        Ok(())
     }
 }
 
 #[derive(Debug)]
-pub enum PlayerTurn {
-    Player1,
-    Player2,
+pub enum GamePhase {
+    Player1Turn,
+    Popup,
+    Player2Turn,
+    WinningCondition,
 }
+
+const TURN_ORDERING: [GamePhase; 4] = [
+    GamePhase::Player1Turn,
+    GamePhase::Popup,
+    GamePhase::Player2Turn,
+    GamePhase::Popup,
+];
 
 #[derive(Debug)]
 pub struct GameBoard {
-    player_1_hand: PlayerHand,
-    player_1_deck: RemainingDeck,
-    player_2_hand: PlayerHand,
-    player_2_deck: RemainingDeck,
-    player_turn: PlayerTurn,
+    pub player_1_hand: PlayerHand,
+    pub player_1_deck: RemainingDeck,
+    pub player_2_hand: PlayerHand,
+    pub player_2_deck: RemainingDeck,
+    pub game_phase: GamePhase,
 }
 impl GameBoard {
     pub fn new() -> Self {
@@ -41,13 +58,13 @@ impl GameBoard {
             player_1_deck: p1_deck,
             player_2_hand: p2_start_hand,
             player_2_deck: p2_deck,
-            player_turn: PlayerTurn::Player1,
+            game_phase: GamePhase::Player1Turn,
         }
     }
 }
 
 #[derive(Debug)]
-struct RemainingDeck {
+pub struct RemainingDeck {
     cards: Vec<Box<dyn entities::Card>>,
 }
 impl RemainingDeck {
@@ -73,15 +90,16 @@ fn get_intial_deck() -> Result<(PlayerHand, RemainingDeck), Box<dyn std::error::
     let mut philosophers = get_philosopher_cards()?;
     let random_index = rng().random_range(0..philosophers.len());
     let initial_philosopher = philosophers.remove(random_index);
-    let player_hand = PlayerHand {
-        active_philosopher: None,
-        inactive_cards: vec![initial_philosopher],
-    };
     let actions = get_action_cards()?;
     let mut remaining_deck_cards = philosophers;
     remaining_deck_cards.extend(actions);
-
-    let remaining_deck = RemainingDeck::new(remaining_deck_cards);
+    let mut remaining_deck = RemainingDeck::new(remaining_deck_cards);
+    let player_initial_cards = remaining_deck.draw_new_cards(4);
+    let mut player_hand = PlayerHand {
+        active_philosopher: None,
+        inactive_cards: vec![initial_philosopher],
+    };
+    player_hand.add_cards_to_hand(player_initial_cards?)?;
     Ok((player_hand, remaining_deck))
 }
 
