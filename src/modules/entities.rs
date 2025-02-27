@@ -1,11 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
-pub trait Card: Debug {
-    fn get_name(&self) -> &str;
-    fn play(&self);
-}
-
 #[derive(Debug, Deserialize, Serialize)]
 enum CoreSchool {
     Rationalist,
@@ -21,9 +16,18 @@ pub enum Effect {
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(tag = "kind", rename_all = "PascalCase")]
-enum AbilityType {
+pub enum AbilityType {
     Damage { damage: u8, duration: u8 },
     Heal { heal: u8, duration: u8 },
+}
+
+pub enum CardType {
+    Action,
+    Philosopher,
+    InPlayPhilosopher,
+}
+pub trait Card: Debug {
+    fn card_type(&self) -> CardType;
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -31,15 +35,17 @@ pub struct Action {
     name: String,
     description: String,
     school: CoreSchool,
-    ability_type: AbilityType,
+    pub ability_type: AbilityType,
     additional_effects: Option<Vec<Effect>>,
 }
-impl Card for Action {
-    fn get_name(&self) -> &str {
-        &self.name
-    }
-    fn play(&self) {
+impl Action {
+    fn play(&self, target: &dyn Card) {
         println!("playing action: {}", &self.name)
+    }
+}
+impl Card for Action {
+    fn card_type(&self) -> CardType {
+        CardType::Action
     }
 }
 
@@ -50,12 +56,8 @@ pub struct Philosopher {
     starting_health: u8,
 }
 impl Card for Philosopher {
-    fn get_name(&self) -> &str {
-        &self.name
-    }
-    fn play(&self) {
-        println!("playing philosopher: {:?}", &self.name)
-        // this should produce an InPlayPhilosopher
+    fn card_type(&self) -> CardType {
+        CardType::Philosopher
     }
 }
 
@@ -65,7 +67,6 @@ pub struct InPlayPhilosopher {
     pub current_damage: u8,
     pub modifiers: Option<Vec<Effect>>,
 }
-
 impl InPlayPhilosopher {
     pub fn new(philosopher: Philosopher) -> Self {
         InPlayPhilosopher {
@@ -74,14 +75,15 @@ impl InPlayPhilosopher {
             modifiers: None,
         }
     }
-}
-
-impl Card for InPlayPhilosopher {
-    fn get_name(&self) -> &str {
-        &self.philosopher.name
+    pub fn apply_heal(&mut self, heal: u8, duration: u8) {
+        todo!()
     }
-    fn play(&self) {
-        println!("philosopher already in play {:?}", &self.philosopher.name)
-        // this should be a default action?
+    pub fn apply_damage(&mut self, damage: u8, duration: u8) {
+        todo!()
+    }
+}
+impl Card for InPlayPhilosopher {
+    fn card_type(&self) -> CardType {
+        CardType::InPlayPhilosopher
     }
 }

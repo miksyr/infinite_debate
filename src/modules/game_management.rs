@@ -1,7 +1,9 @@
-use crate::modules::entities;
+use crate::modules::entities::{self, Action};
 use rand::seq::SliceRandom;
 use rand::{rng, Rng};
 use serde_yaml;
+
+use super::entities::{AbilityType, Card, CardType, InPlayPhilosopher, Philosopher};
 
 #[derive(Debug, Default)]
 pub struct PlayerHand {
@@ -30,17 +32,9 @@ impl PlayerHand {
 #[derive(Debug)]
 pub enum GamePhase {
     Player1Turn,
-    Popup,
     Player2Turn,
-    WinningCondition,
+    GameOver,
 }
-
-const TURN_ORDERING: [GamePhase; 4] = [
-    GamePhase::Player1Turn,
-    GamePhase::Popup,
-    GamePhase::Player2Turn,
-    GamePhase::Popup,
-];
 
 #[derive(Debug)]
 pub struct GameBoard {
@@ -72,6 +66,49 @@ impl GameBoard {
             _ => Err(Into::into("bad game phase")),
         }
     }
+
+    pub fn apply_cards(&mut self, cards: Vec<Box<dyn Card>>) {
+        let enemy_target: Option<&mut InPlayPhilosopher> = match self.game_phase {
+            GamePhase::Player1Turn => self.player_2_hand.active_philosopher.as_mut(),
+            GamePhase::Player2Turn => self.player_1_hand.active_philosopher.as_mut(),
+            _ => None,
+        };
+        let friendly_target: Option<&mut InPlayPhilosopher> = match self.game_phase {
+            GamePhase::Player1Turn => self.player_1_hand.active_philosopher.as_mut(),
+            GamePhase::Player2Turn => self.player_2_hand.active_philosopher.as_mut(),
+            _ => None,
+        };
+        for card in cards {
+            match card.card_type() {
+                CardType::Action => {
+                    if let Some(action_card) = card.as_any().downcast_ref::<Action>() {
+                        GameBoard::take_single_action(action_card, friendly_target, enemy_target);
+                    }
+                }
+                CardType::Philosopher => continue,
+                CardType::InPlayPhilosopher => continue,
+            }
+        }
+    }
+
+    fn take_single_action(
+        card: Action,
+        friendly_target: Option<&mut InPlayPhilosopher>,
+        enemy_target: Option<&mut InPlayPhilosopher>,
+    ) {
+        match card.ability_type {
+            AbilityType::Heal { heal, duration } => match friendly_target {
+                Some(phil) => phil.apply_heal(heal, duration),
+                None => return,
+            },
+            AbilityType::Damage { damage, duration } => match enemy_target {
+                Some(phil) => phil.apply_damage(damage, duration),
+                None => return,
+            },
+        }
+    }
+
+    pub fn next_turn(&mut self) {}
 }
 
 #[derive(Debug)]
