@@ -13,13 +13,10 @@ use ratatui::{
     DefaultTerminal,
 };
 
-use super::{entities, game_management::GameBoard};
-
-pub struct GameApp {
-    exit: bool,
-    game_board: GameBoard,
-    current_round: u32,
-}
+use super::{
+    entities,
+    game_management::{GameBoard, PlayerHand},
+};
 
 // how to convert Card into ListItem (for display)
 const TEXT_FG_COLOR: Color = SLATE.c200;
@@ -51,13 +48,52 @@ struct AvailablePlayerCard<'a> {
     is_selected: CardSelectionState,
 }
 
+struct CurrentPlayerHand<'a> {
+    pub cards: Vec<AvailablePlayerCard<'a>>,
+    pub card_state: ListState,
+}
+impl CurrentPlayerHand<'_> {
+    fn convert_to_available_cards(
+        cards: &Vec<Box<dyn entities::Card>>,
+    ) -> Vec<AvailablePlayerCard> {
+        let available_cards: Vec<AvailablePlayerCard> = cards
+            .iter()
+            .map(|card| AvailablePlayerCard {
+                card: card.as_ref(),
+                is_selected: CardSelectionState::NotSelected,
+            })
+            .collect();
+        available_cards
+    }
+
+    fn from_player_hand(player_hand: &PlayerHand) -> CurrentPlayerHand {
+        CurrentPlayerHand {
+            cards: CurrentPlayerHand::convert_to_available_cards(&player_hand.inactive_cards),
+            card_state: ListState::default(),
+        }
+    }
+}
+
+pub struct GameApp {
+    exit: bool,
+    game_board: GameBoard,
+    current_round: u32,
+}
+
 impl GameApp {
     pub fn new() -> Self {
+        let game_board = GameBoard::new();
         GameApp {
             exit: false,
-            game_board: GameBoard::new(),
+            game_board,
             current_round: 0,
         }
+    }
+
+    fn get_current_player_hand(&self) -> Result<CurrentPlayerHand, Box<dyn std::error::Error>> {
+        let current_player_data = self.game_board.active_player_data().unwrap();
+        let current_player_hand = CurrentPlayerHand::from_player_hand(current_player_data.0);
+        Ok(current_player_hand)
     }
 
     pub fn run(mut self, mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Error>> {
@@ -76,8 +112,33 @@ impl GameApp {
         }
         match key.code {
             KeyCode::Char('q') | KeyCode::Esc => self.exit = true,
+            KeyCode::Up | KeyCode::Char('w') => self.select_previous(),
+            KeyCode::Down | KeyCode::Char('s') => self.select_next(),
+            KeyCode::Enter => self.submit_card_selections(),
             _ => {}
         }
+    }
+
+    fn select_previous(&mut self) {
+        self.current_player_hand.card_state.select_previous();
+    }
+
+    fn select_next(&mut self) {
+        self.current_player_hand.card_state.select_next();
+    }
+
+    fn toggle_card_selection(&mut self) {
+        todo!()
+        // if let Some(i) = self.current_card_state.selected() {
+        //     self.todo_list.items[i].status = match self.todo_list.items[i].status {
+        //         CardSelectionState::Selected => CardSelectionState::NotSelected,
+        //         CardSelectionState::NotSelected => CardSelectionState::Selected,
+        //     }
+        // }
+    }
+
+    fn submit_card_selections(&mut self) {
+        todo!()
     }
 }
 
@@ -138,8 +199,7 @@ impl GameApp {
             .highlight_symbol(">")
             .highlight_spacing(HighlightSpacing::Always);
 
-        // this list state should contain whether a card is selected or not
-        StatefulWidget::render(list, area, buf, &mut ListState::default());
+        StatefulWidget::render(list, area, buf, &mut self.current_player_hand.card_state);
     }
 }
 

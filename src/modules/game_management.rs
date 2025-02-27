@@ -8,6 +8,7 @@ pub struct PlayerHand {
     pub active_philosopher: Option<entities::InPlayPhilosopher>,
     pub inactive_cards: Vec<Box<dyn entities::Card>>,
 }
+
 impl PlayerHand {
     pub fn add_cards_to_hand(
         &mut self,
@@ -59,6 +60,16 @@ impl GameBoard {
             player_2_hand: p2_start_hand,
             player_2_deck: p2_deck,
             game_phase: GamePhase::Player1Turn,
+        }
+    }
+
+    pub fn active_player_data(
+        &self,
+    ) -> Result<(&PlayerHand, &RemainingDeck), Box<dyn std::error::Error>> {
+        match self.game_phase {
+            GamePhase::Player1Turn => Ok((&self.player_1_hand, &self.player_1_deck)),
+            GamePhase::Player2Turn => Ok((&self.player_2_hand, &self.player_2_deck)),
+            _ => Err(Into::into("bad game phase")),
         }
     }
 }
