@@ -74,25 +74,30 @@ impl CurrentPlayerHand<'_> {
     }
 }
 
-pub struct GameApp {
+pub struct GameApp<'a> {
     exit: bool,
     game_board: GameBoard,
+    current_player_hand: CurrentPlayerHand<'a>,
     current_round: u32,
 }
 
-impl GameApp {
+impl GameApp<'_> {
     pub fn new() -> Self {
         let game_board = GameBoard::new();
+        let current_player_data = game_board.active_player_data().unwrap().clone();
+        let current_player_hand = CurrentPlayerHand::from_player_hand(current_player_data.0);
         GameApp {
             exit: false,
             game_board,
+            current_player_hand,
             current_round: 0,
         }
     }
 
     fn get_current_player_hand(&self) -> Result<CurrentPlayerHand, Box<dyn std::error::Error>> {
         let current_player_data = self.game_board.active_player_data().unwrap();
-        let current_player_hand = CurrentPlayerHand::from_player_hand(current_player_data.0);
+        let current_player_hand =
+            CurrentPlayerHand::from_player_hand(current_player_data.0.clone());
         Ok(current_player_hand)
     }
 
