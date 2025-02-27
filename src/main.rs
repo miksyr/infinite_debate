@@ -1,5 +1,7 @@
 //use infinite_debate::modules::game_management;
-use infinite_debate::modules::rendering;
+mod entities;
+mod game_management;
+mod rendering;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let game_app = rendering::GameApp::new();

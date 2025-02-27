@@ -1,4 +1,4 @@
-use crate::modules::entities::{self, Action};
+use super::entities::{self, Action};
 use rand::seq::SliceRandom;
 use rand::{rng, Rng};
 use serde_yaml;
@@ -96,11 +96,27 @@ impl GameBoard {
     ) {
         match card.ability_type {
             AbilityType::Heal { heal, duration } => match friendly_target {
-                Some(phil) => phil.apply_heal(heal, duration),
+                Some(phil) => {
+                    phil.apply_heal(heal);
+                    if duration > 0 {
+                        phil.add_effect(entities::Effect::Recovery {
+                            heal,
+                            duration: duration - 1,
+                        });
+                    }
+                }
                 None => return,
             },
             AbilityType::Damage { damage, duration } => match enemy_target {
-                Some(phil) => phil.apply_damage(damage, duration),
+                Some(phil) => {
+                    phil.apply_damage(damage);
+                    if duration > 0 {
+                        phil.add_effect(entities::Effect::Poison {
+                            damage,
+                            duration: duration - 1,
+                        });
+                    }
+                }
                 None => return,
             },
         }
