@@ -14,7 +14,7 @@ use ratatui::{
 };
 
 use super::{
-    entities,
+    entities::Card,
     game_management::{GameBoard, PlayerHand},
 };
 
@@ -27,12 +27,11 @@ impl<'a> From<&'a AvailablePlayerCard<'a>> for ListItem<'a> {
     fn from(value: &'a AvailablePlayerCard<'a>) -> Self {
         let line = match value.is_selected {
             CardSelectionState::NotSelected => {
-                Line::styled(format!(" ☐ {}", value.card.get_name()), TEXT_FG_COLOR)
+                Line::styled(format!(" ☐ {:?}", value.card), TEXT_FG_COLOR)
             }
-            CardSelectionState::Selected => Line::styled(
-                format!(" ✓ {}", value.card.get_name()),
-                COMPLETED_TEXT_FG_COLOR,
-            ),
+            CardSelectionState::Selected => {
+                Line::styled(format!(" ✓ {:?}", value.card), COMPLETED_TEXT_FG_COLOR)
+            }
         };
         ListItem::new(line)
     }
@@ -44,7 +43,7 @@ enum CardSelectionState {
 }
 
 struct AvailablePlayerCard<'a> {
-    card: &'a dyn entities::Card,
+    card: &'a Card,
     is_selected: CardSelectionState,
 }
 
@@ -53,9 +52,7 @@ struct CurrentPlayerHand<'a> {
     pub card_state: ListState,
 }
 impl CurrentPlayerHand<'_> {
-    fn convert_to_available_cards(
-        cards: &Vec<Box<dyn entities::Card>>,
-    ) -> Vec<AvailablePlayerCard> {
+    fn convert_to_available_cards(cards: &Vec<Box<Card>>) -> Vec<AvailablePlayerCard> {
         let available_cards: Vec<AvailablePlayerCard> = cards
             .iter()
             .map(|card| AvailablePlayerCard {
@@ -74,14 +71,13 @@ impl CurrentPlayerHand<'_> {
     }
 }
 
-pub struct GameApp<'a> {
+pub struct GameApp {
     exit: bool,
     game_board: GameBoard,
-    current_player_hand: CurrentPlayerHand<'a>,
     current_round: u32,
 }
 
-impl GameApp<'_> {
+impl GameApp {
     pub fn new() -> Self {
         let game_board = GameBoard::new();
         let current_player_data = game_board.active_player_data().unwrap().clone();
@@ -89,15 +85,13 @@ impl GameApp<'_> {
         GameApp {
             exit: false,
             game_board,
-            current_player_hand,
             current_round: 0,
         }
     }
 
     fn get_current_player_hand(&self) -> Result<CurrentPlayerHand, Box<dyn std::error::Error>> {
         let current_player_data = self.game_board.active_player_data().unwrap();
-        let current_player_hand =
-            CurrentPlayerHand::from_player_hand(current_player_data.0.clone());
+        let current_player_hand = CurrentPlayerHand::from_player_hand(current_player_data.0);
         Ok(current_player_hand)
     }
 
@@ -125,11 +119,11 @@ impl GameApp<'_> {
     }
 
     fn select_previous(&mut self) {
-        self.current_player_hand.card_state.select_previous();
+        // self.current_player_hand.card_state.select_previous();
     }
 
     fn select_next(&mut self) {
-        self.current_player_hand.card_state.select_next();
+        // self.current_player_hand.card_state.select_next();
     }
 
     fn toggle_card_selection(&mut self) {
@@ -204,7 +198,7 @@ impl GameApp {
             .highlight_symbol(">")
             .highlight_spacing(HighlightSpacing::Always);
 
-        StatefulWidget::render(list, area, buf, &mut self.current_player_hand.card_state);
+        StatefulWidget::render(list, area, buf, &mut ListState::default());
     }
 }
 

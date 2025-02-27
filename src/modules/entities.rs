@@ -21,13 +21,11 @@ pub enum AbilityType {
     Heal { heal: u8, duration: u8 },
 }
 
-pub enum CardType {
-    Action,
-    Philosopher,
-    InPlayPhilosopher,
-}
-pub trait Card: Debug {
-    fn card_type(&self) -> CardType;
+#[derive(Debug)]
+pub enum Card {
+    Action(Action),
+    Philosopher(Philosopher),
+    InPlayPhilosopher(InPlayPhilosopher),
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -39,13 +37,8 @@ pub struct Action {
     additional_effects: Option<Vec<Effect>>,
 }
 impl Action {
-    fn play(&self, target: &dyn Card) {
+    fn play(&self, target: Card) {
         println!("playing action: {}", &self.name)
-    }
-}
-impl Card for Action {
-    fn card_type(&self) -> CardType {
-        CardType::Action
     }
 }
 
@@ -54,11 +47,6 @@ pub struct Philosopher {
     name: String,
     school: CoreSchool,
     starting_health: u8,
-}
-impl Card for Philosopher {
-    fn card_type(&self) -> CardType {
-        CardType::Philosopher
-    }
 }
 
 #[derive(Debug)]
@@ -80,10 +68,5 @@ impl InPlayPhilosopher {
     }
     pub fn apply_damage(&mut self, damage: u8, duration: u8) {
         todo!()
-    }
-}
-impl Card for InPlayPhilosopher {
-    fn card_type(&self) -> CardType {
-        CardType::InPlayPhilosopher
     }
 }
