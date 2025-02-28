@@ -1,5 +1,7 @@
 #[cfg(test)]
-use crate::entities::{AbilityType, Action, Card, CoreSchool, Philosopher};
+use crate::entities::Philosopher;
+#[cfg(test)]
+use crate::entities::{AbilityType, Action, Card, CoreSchool};
 
 #[cfg(test)]
 pub fn get_example_cards() -> Vec<Box<Card>> {
