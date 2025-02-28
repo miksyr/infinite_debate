@@ -106,7 +106,7 @@ fn get_intial_deck() -> Result<(PlayerHand, RemainingDeck), Box<dyn std::error::
     let actions = get_action_cards()?;
     let mut remaining_deck_cards = philosophers;
     remaining_deck_cards.extend(actions);
-    let mut remaining_deck = RemainingDeck::new(remaining_deck_cards);
+    let mut remaining_deck = RemainingDeck::new(remaining_deck_cards, None);
     let player_initial_cards = remaining_deck.draw_new_cards(4);
     let mut player_hand = PlayerHand {
         active_philosopher: None,

@@ -1,14 +1,18 @@
 use crate::entities::Card;
-use rand::prelude::SliceRandom;
-use rand::rng;
+use rand::{rng, RngCore};
+use rand::{rngs::StdRng, seq::SliceRandom, SeedableRng};
 
 #[derive(Debug)]
 pub struct RemainingDeck {
     cards: Vec<Box<Card>>,
 }
 impl RemainingDeck {
-    pub fn new(mut cards: Vec<Box<Card>>) -> Self {
-        cards.shuffle(&mut rng());
+    pub fn new(mut cards: Vec<Box<Card>>, seed: Option<u64>) -> Self {
+        let mut rng: Box<dyn RngCore> = match seed {
+            Some(seed) => Box::new(StdRng::seed_from_u64(seed)),
+            None => Box::new(rng()),
+        };
+        cards.shuffle(&mut rng);
         RemainingDeck { cards }
     }
     pub fn num_remaining_cards(&self) -> u8 {
@@ -23,6 +27,18 @@ impl RemainingDeck {
 
 #[cfg(test)]
 mod tests {
+
+    use crate::test_utils::*;
+
+    use super::*;
+
     #[test]
-    fn test() {}
+    fn test_new_remaining_deck_with_seed() {
+        let cards = get_example_cards();
+        let remaining_deck = RemainingDeck::new(cards, Some(42));
+        assert_ne!(
+            format!("{:?}", get_example_cards()),
+            format!("{:?}", remaining_deck.cards)
+        );
+    }
 }
