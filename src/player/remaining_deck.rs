@@ -40,5 +40,49 @@ mod tests {
             format!("{:?}", get_example_cards()),
             format!("{:?}", remaining_deck.cards)
         );
+        assert_ne!(remaining_deck.num_remaining_cards(), 0);
+    }
+
+    #[test]
+    fn test_new_remaining_deck_without_seed() {
+        let cards = get_example_cards();
+        let remaining_deck = RemainingDeck::new(cards, None);
+        assert_ne!(remaining_deck.num_remaining_cards(), 0);
+    }
+
+    #[test]
+    fn test_draw_new_cards_with_cards_left() {
+        let cards = get_example_cards();
+        let num_original_cards: u8 = cards.len().try_into().unwrap();
+        let mut remaining_deck = RemainingDeck::new(cards, None);
+        assert_eq!(remaining_deck.num_remaining_cards(), num_original_cards);
+        let drawn_cards = remaining_deck
+            .draw_new_cards(2)
+            .expect("should have been able to draw cards");
+        assert_eq!(drawn_cards.len(), 2);
+        assert_eq!(remaining_deck.num_remaining_cards(), 1);
+    }
+
+    #[test]
+    fn test_draw_new_cards_with_none_left() {
+        let mut remaining_deck = RemainingDeck::new(vec![], None);
+        let drawn_cards = remaining_deck
+            .draw_new_cards(64)
+            .expect("should have been able to draw cards");
+        assert!(drawn_cards.len() < 64);
+        assert_eq!(remaining_deck.num_remaining_cards(), 0);
+    }
+
+    #[test]
+    fn test_draw_new_cards_with_not_enough_left() {
+        let cards = get_example_cards();
+        let num_original_cards: u8 = cards.len().try_into().unwrap();
+        let mut remaining_deck = RemainingDeck::new(cards, None);
+        assert_eq!(remaining_deck.num_remaining_cards(), num_original_cards);
+        let drawn_cards = remaining_deck
+            .draw_new_cards(64)
+            .expect("should have been able to draw cards");
+        assert!(drawn_cards.len() < 64);
+        assert_eq!(remaining_deck.num_remaining_cards(), 0);
     }
 }
