@@ -138,4 +138,31 @@ mod tests {
         );
         assert_ne!(player_hand.inactive_cards.len(), 0)
     }
+
+    #[test]
+    fn test_add_cards_to_empty() {
+        let mut player_hand = PlayerHand {
+            active_philosopher: None,
+            inactive_cards: vec![],
+        };
+        let new_cards = get_example_cards();
+        let num_new_cards = new_cards.len();
+        let result = player_hand.add_cards_to_hand(new_cards);
+        assert!(result.is_ok());
+        assert_eq!(player_hand.inactive_cards.len(), num_new_cards);
+    }
+
+    #[test]
+    fn test_add_cards_to_existing_cards() {
+        let mut player_hand = get_populated_player_hand();
+        let num_existing_cards = player_hand.inactive_cards.len();
+        let new_cards = get_example_cards();
+        let num_new_cards = new_cards.len();
+        let result = player_hand.add_cards_to_hand(new_cards);
+        assert!(result.is_ok());
+        assert_eq!(
+            player_hand.inactive_cards.len(),
+            num_new_cards + num_existing_cards
+        )
+    }
 }
