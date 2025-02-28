@@ -2,7 +2,7 @@ use crate::entities::{Effect, Philosopher};
 
 #[derive(Debug)]
 pub struct DamageCounter {
-    current_damage: u8,
+    pub current_damage: u8,
 }
 impl DamageCounter {
     pub fn apply_heal(&mut self, heal: u8) {
@@ -10,7 +10,7 @@ impl DamageCounter {
     }
 
     pub fn apply_damage(&mut self, damage: u8) {
-        self.current_damage -= damage;
+        self.current_damage += damage;
     }
 }
 

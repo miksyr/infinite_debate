@@ -41,7 +41,7 @@ mod tests {
     use crate::entities::{CoreSchool, Philosopher};
 
     use super::*;
-    use crate::test_utils::*;
+    use crate::test_utils::get_example_cards;
 
     #[test]
     fn test_player_hand_creation_no_cards() {

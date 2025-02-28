@@ -4,28 +4,32 @@ use crate::entities::Philosopher;
 use crate::entities::{AbilityType, Action, Card, CoreSchool};
 
 #[cfg(test)]
+pub fn get_example_damage_action(damage: u8, duration: u8) -> Card {
+    Card::Action(Action::new(
+        "test_dam".into(),
+        "damage_desc".into(),
+        CoreSchool::Skeptic,
+        AbilityType::Damage { damage, duration },
+        None,
+    ))
+}
+
+#[cfg(test)]
+pub fn get_example_heal_action(heal: u8, duration: u8) -> Card {
+    Card::Action(Action::new(
+        "test_heal".into(),
+        "heal_desc".into(),
+        CoreSchool::Rationalist,
+        AbilityType::Heal { heal, duration },
+        None,
+    ))
+}
+
+#[cfg(test)]
 pub fn get_example_cards() -> Vec<Box<Card>> {
     let cards = vec![
-        Card::Action(Action::new(
-            "test_dam".into(),
-            "test_desc".into(),
-            CoreSchool::Skeptic,
-            AbilityType::Damage {
-                damage: 1,
-                duration: 0,
-            },
-            None,
-        )),
-        Card::Action(Action::new(
-            "test_heal".into(),
-            "test_desc2".into(),
-            CoreSchool::Rationalist,
-            AbilityType::Heal {
-                heal: 3,
-                duration: 2,
-            },
-            None,
-        )),
+        get_example_damage_action(1, 0),
+        get_example_heal_action(3, 2),
         Card::Philosopher(Philosopher::new(
             "hand_philos".into(),
             CoreSchool::Empiricist,

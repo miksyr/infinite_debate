@@ -28,7 +28,7 @@ impl RemainingDeck {
 #[cfg(test)]
 mod tests {
 
-    use crate::test_utils::*;
+    use crate::test_utils::get_example_cards;
 
     use super::*;
 
