@@ -103,31 +103,31 @@ mod tests {
 
     #[test]
     fn test_multiple_heal_effect() {
-        let mut damage_counter = DamageCounter { current_damage: 0 };
-        let mut damage_effect = Effect::Recovery {
+        let mut damage_counter = DamageCounter { current_damage: 9 };
+        let mut heal_effect = Effect::Recovery {
             heal: 3,
             duration: 2,
         };
-        damage_effect.apply(&mut damage_counter);
-        damage_effect.apply(&mut damage_counter);
-        assert_eq!(damage_counter.current_damage, 6);
-        assert_eq!(damage_effect.magnitude(), 3);
-        assert_eq!(damage_effect.duration(), 0);
-        assert!(damage_effect.is_expired());
+        heal_effect.apply(&mut damage_counter);
+        heal_effect.apply(&mut damage_counter);
+        assert_eq!(damage_counter.current_damage, 3);
+        assert_eq!(heal_effect.magnitude(), 3);
+        assert_eq!(heal_effect.duration(), 0);
+        assert!(heal_effect.is_expired());
     }
 
     #[test]
-    fn test_expired_damage_effect() {
-        let mut damage_counter = DamageCounter { current_damage: 0 };
-        let mut damage_effect = Effect::Poison {
-            damage: 3,
+    fn test_expired_heal_effect() {
+        let mut damage_counter = DamageCounter { current_damage: 9 };
+        let mut heal_effect = Effect::Recovery {
+            heal: 3,
             duration: 0,
         };
-        assert!(damage_effect.is_expired());
-        damage_effect.apply(&mut damage_counter);
-        assert_eq!(damage_counter.current_damage, 0);
-        assert_eq!(damage_effect.magnitude(), 3);
-        assert_eq!(damage_effect.duration(), 0);
-        assert!(damage_effect.is_expired());
+        assert!(heal_effect.is_expired());
+        heal_effect.apply(&mut damage_counter);
+        assert_eq!(damage_counter.current_damage, 9);
+        assert_eq!(heal_effect.magnitude(), 3);
+        assert_eq!(heal_effect.duration(), 0);
+        assert!(heal_effect.is_expired());
     }
 }
