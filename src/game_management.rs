@@ -1,33 +1,7 @@
-use super::entities::{self, Action};
-use rand::seq::SliceRandom;
+use super::entities::{AbilityType, Action, Card, Effect, InPlayPhilosopher, Philosopher};
+use super::player::{PlayerHand, RemainingDeck};
 use rand::{rng, Rng};
 use serde_yaml;
-
-use super::entities::{AbilityType, Card, InPlayPhilosopher, Philosopher};
-
-#[derive(Debug, Default)]
-pub struct PlayerHand {
-    pub active_philosopher: Option<InPlayPhilosopher>,
-    pub inactive_cards: Vec<Box<Card>>,
-}
-
-impl PlayerHand {
-    pub fn add_cards_to_hand(
-        &mut self,
-        cards: Vec<Box<Card>>,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        self.inactive_cards.extend(cards);
-        Ok(())
-    }
-
-    pub fn play_philosopher(
-        &mut self,
-        philosopher_card: entities::Philosopher,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        self.active_philosopher = Some(entities::InPlayPhilosopher::new(philosopher_card));
-        Ok(())
-    }
-}
 
 #[derive(Debug)]
 pub enum GamePhase {
@@ -78,15 +52,15 @@ impl GameBoard {
             GamePhase::Player2Turn => self.player_2_hand.active_philosopher.as_mut(),
             _ => None,
         };
-        // for card in cards {
-        //     match card {
-        //         Card::Action(action) => {
-        //             GameBoard::take_single_action(action, &friendly_target, &enemy_target);
-        //         }
-        //         Card::Philosopher(_) => continue,
-        //         Card::InPlayPhilosopher(_) => continue,
-        //     }
-        // }
+        //        for card in cards {
+        //            match card {
+        //                Card::Action(action) => {
+        //                    GameBoard::take_single_action(action, &friendly_target, &enemy_target);
+        //                }
+        //                Card::Philosopher(_) => continue,
+        //                Card::InPlayPhilosopher(_) => continue,
+        //            }
+        //        }
     }
 
     fn take_single_action(
@@ -99,7 +73,7 @@ impl GameBoard {
                 Some(phil) => {
                     phil.apply_heal(heal);
                     if duration > 0 {
-                        phil.add_effect(entities::Effect::Recovery {
+                        phil.add_effect(Effect::Recovery {
                             heal,
                             duration: duration - 1,
                         });
@@ -111,7 +85,7 @@ impl GameBoard {
                 Some(phil) => {
                     phil.apply_damage(damage);
                     if duration > 0 {
-                        phil.add_effect(entities::Effect::Poison {
+                        phil.add_effect(Effect::Poison {
                             damage,
                             duration: duration - 1,
                         });
@@ -123,25 +97,6 @@ impl GameBoard {
     }
 
     pub fn next_turn(&mut self) {}
-}
-
-#[derive(Debug)]
-pub struct RemainingDeck {
-    cards: Vec<Box<Card>>,
-}
-impl RemainingDeck {
-    pub fn new(mut cards: Vec<Box<Card>>) -> Self {
-        cards.shuffle(&mut rng());
-        RemainingDeck { cards }
-    }
-    pub fn num_remaining_cards(&self) -> u8 {
-        self.cards.len().try_into().unwrap()
-    }
-    pub fn draw_new_cards(&mut self, n: u8) -> Result<Vec<Box<Card>>, Box<dyn std::error::Error>> {
-        let n: u8 = n.min(self.num_remaining_cards());
-        let selected_cards: Vec<Box<Card>> = self.cards.drain(0..n as usize).collect();
-        Ok(selected_cards)
-    }
 }
 
 fn get_intial_deck() -> Result<(PlayerHand, RemainingDeck), Box<dyn std::error::Error>> {

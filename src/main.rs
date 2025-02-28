@@ -1,7 +1,8 @@
-//use infinite_debate::modules::game_management;
 mod entities;
 mod game_management;
+mod player;
 mod rendering;
+mod test_utils;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let game_app = rendering::GameApp::new();

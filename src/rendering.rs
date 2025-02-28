@@ -13,10 +13,9 @@ use ratatui::{
     DefaultTerminal,
 };
 
-use super::{
-    entities::Card,
-    game_management::{GameBoard, PlayerHand},
-};
+use super::entities::Card;
+use super::game_management::GameBoard;
+use super::player::PlayerHand;
 
 // how to convert Card into ListItem (for display)
 const TEXT_FG_COLOR: Color = SLATE.c200;

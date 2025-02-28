@@ -1,8 +1,8 @@
 use serde::{Deserialize, Serialize};
-use std::{fmt::Debug, ops::AddAssign};
+use std::fmt::Debug;
 
 #[derive(Debug, Deserialize, Serialize)]
-enum CoreSchool {
+pub enum CoreSchool {
     Rationalist,
     Empiricist,
     Skeptic,
@@ -54,12 +54,38 @@ pub struct Action {
     pub ability_type: AbilityType,
     additional_effects: Option<Vec<Effect>>,
 }
+impl Action {
+    pub fn new(
+        name: String,
+        description: String,
+        school: CoreSchool,
+        ability_type: AbilityType,
+        additional_effects: Option<Vec<Effect>>,
+    ) -> Self {
+        Self {
+            name,
+            description,
+            school,
+            ability_type,
+            additional_effects,
+        }
+    }
+}
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Philosopher {
-    name: String,
-    school: CoreSchool,
-    starting_health: u8,
+    pub name: String,
+    pub school: CoreSchool,
+    pub starting_health: u8,
+}
+impl Philosopher {
+    pub fn new(name: String, school: CoreSchool, starting_health: u8) -> Self {
+        Self {
+            name,
+            school,
+            starting_health,
+        }
+    }
 }
 
 #[derive(Debug)]
