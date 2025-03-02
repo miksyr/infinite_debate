@@ -67,10 +67,14 @@ impl GameBoard {
                 Card::Action(action) => {
                     self.take_single_action(&action);
                 }
-                Card::Philosopher(_) => continue,
-                Card::InPlayPhilosopher(_) => continue,
+                Card::Philosopher(p) => self.play_philosopher(Card::Philosopher(p)),
+                Card::InPlayPhilosopher(p) => self.play_philosopher(Card::InPlayPhilosopher(p)),
             }
         }
+    }
+
+    fn play_philosopher(&mut self, philosopher: Card) {
+        todo!()
     }
 
     fn get_target(&mut self, ability_type: &AbilityType) -> Option<&mut InPlayPhilosopher> {
@@ -170,7 +174,7 @@ mod tests {
     }
 
     #[test]
-    fn test_take_single_action_damage() {
+    fn test_take_single_action_damage_no_duration() {
         let expected_damage = 5;
         let mut game_board = get_example_board();
         let action_card = unwrap_action_card(get_example_damage_action(expected_damage, 0));
@@ -187,7 +191,7 @@ mod tests {
     }
 
     #[test]
-    fn test_take_duration_damage() {
+    fn test_take_single_action_damage_w_duration() {
         let expected_damage = 5;
         let duration = 4;
         let mut game_board = get_example_board();
@@ -214,6 +218,51 @@ mod tests {
         } = *applied_effect
         {
             assert_eq!(ab_damage, expected_damage);
+            assert_eq!(ab_duration, duration - 1);
+        } else {
+            panic!("Ability wasn't Damage/Poison!")
+        }
+    }
+
+    #[test]
+    fn test_take_single_action_heal() {
+        let initial_damage = 5;
+        let heal = 2;
+        let mut game_board = get_example_board();
+        let action_card = unwrap_action_card(get_example_heal_action(heal, 0));
+        let target = game_board.get_target(&action_card.ability_type).unwrap();
+        let target_initial_health = target.remaining_health();
+        target.apply_direct_damage(initial_damage);
+        assert_health_after_action(
+            &mut game_board,
+            &action_card,
+            target_initial_health - initial_damage + heal,
+        );
+    }
+
+    #[test]
+    fn test_take_single_action_heal_duration_full_health() {
+        let expected_heal = 6;
+        let duration = 2;
+        let mut game_board = get_example_board();
+        let action_card = unwrap_action_card(get_example_heal_action(expected_heal, duration));
+        let target = game_board.get_target(&action_card.ability_type);
+        let target_initial_health = target
+            .as_ref()
+            .expect("target philosopher not found")
+            .remaining_health();
+        assert_health_after_action(&mut game_board, &action_card, target_initial_health);
+
+        let target = game_board.get_target(&action_card.ability_type).unwrap();
+        let num_effects = target.effects.len();
+        assert_eq!(num_effects, 1);
+        let applied_effect = &target.effects[0];
+        if let Effect::Recovery {
+            heal: ab_heal,
+            duration: ab_duration,
+        } = *applied_effect
+        {
+            assert_eq!(ab_heal, expected_heal);
             assert_eq!(ab_duration, duration - 1);
         } else {
             panic!("Ability wasn't Damage/Poison!")
