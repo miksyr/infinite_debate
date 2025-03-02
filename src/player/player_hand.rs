@@ -41,7 +41,7 @@ mod tests {
     use crate::entities::{CoreSchool, Philosopher};
 
     use super::*;
-    use crate::test_utils::get_example_cards;
+    use crate::test_utils::{get_example_cards, get_populated_player_hand};
 
     #[test]
     fn test_player_hand_creation_no_cards() {
@@ -53,18 +53,9 @@ mod tests {
         assert_eq!(player_hand.inactive_cards.len(), 0)
     }
 
-    fn get_populated_player_hand() -> PlayerHand {
-        let example_philosopher = Philosopher::new("test".into(), CoreSchool::Skeptic, 16);
-        let player_hand = PlayerHand {
-            active_philosopher: Some(InPlayPhilosopher::new(example_philosopher)),
-            inactive_cards: get_example_cards(),
-        };
-        player_hand
-    }
-
     #[test]
     fn test_player_hand_creation_philosopher_card() {
-        let player_hand = get_populated_player_hand();
+        let player_hand = get_populated_player_hand(16);
         assert!(player_hand.active_philosopher.is_some());
         assert_eq!(player_hand.inactive_cards.len(), 3)
     }
@@ -154,7 +145,7 @@ mod tests {
 
     #[test]
     fn test_add_cards_to_existing_cards() {
-        let mut player_hand = get_populated_player_hand();
+        let mut player_hand = get_populated_player_hand(16);
         let num_existing_cards = player_hand.inactive_cards.len();
         let new_cards = get_example_cards();
         let num_new_cards = new_cards.len();

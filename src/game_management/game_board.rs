@@ -50,34 +50,37 @@ impl GameBoard {
     }
 
     pub fn apply_cards(&mut self, cards: Vec<Card>) {
-        let enemy_target: Option<&mut InPlayPhilosopher> = match self.game_phase {
-            GamePhase::Player1Turn => self.player_2_hand.active_philosopher.as_mut(),
-            GamePhase::Player2Turn => self.player_1_hand.active_philosopher.as_mut(),
-            _ => None,
-        };
-        let friendly_target: Option<&mut InPlayPhilosopher> = match self.game_phase {
-            GamePhase::Player1Turn => self.player_1_hand.active_philosopher.as_mut(),
-            GamePhase::Player2Turn => self.player_2_hand.active_philosopher.as_mut(),
-            _ => None,
-        };
-        //        for card in cards {
-        //            match card {
-        //                Card::Action(action) => {
-        //                    GameBoard::take_single_action(action, &friendly_target, &enemy_target);
-        //                }
-        //                Card::Philosopher(_) => continue,
-        //                Card::InPlayPhilosopher(_) => continue,
-        //            }
-        //        }
+        for card in cards {
+            match card {
+                Card::Action(action) => {
+                    self.take_single_action(action);
+                }
+                Card::Philosopher(_) => continue,
+                Card::InPlayPhilosopher(_) => continue,
+            }
+        }
     }
 
-    fn take_single_action(
-        card: Action,
-        friendly_target: Option<&mut InPlayPhilosopher>,
-        enemy_target: Option<&mut InPlayPhilosopher>,
-    ) {
+    fn get_target(&mut self, ability_type: &AbilityType) -> Option<&mut InPlayPhilosopher> {
+        match ability_type {
+            AbilityType::Damage { .. } => match self.game_phase {
+                GamePhase::Player1Turn => self.player_2_hand.active_philosopher.as_mut(),
+                GamePhase::Player2Turn => self.player_1_hand.active_philosopher.as_mut(),
+                _ => None,
+            },
+            AbilityType::Heal { .. } => match self.game_phase {
+                GamePhase::Player1Turn => self.player_1_hand.active_philosopher.as_mut(),
+                GamePhase::Player2Turn => self.player_2_hand.active_philosopher.as_mut(),
+                _ => None,
+            },
+        }
+    }
+
+    fn take_single_action(&mut self, card: Action) {
+        let target = self.get_target(&card.ability_type);
+
         match card.ability_type {
-            AbilityType::Heal { heal, duration } => match friendly_target {
+            AbilityType::Heal { heal, duration } => match target {
                 Some(phil) => {
                     phil.apply_direct_heal(heal);
                     if duration > 0 {
@@ -89,7 +92,7 @@ impl GameBoard {
                 }
                 None => return,
             },
-            AbilityType::Damage { damage, duration } => match enemy_target {
+            AbilityType::Damage { damage, duration } => match target {
                 Some(phil) => {
                     phil.apply_direct_damage(damage);
                     if duration > 0 {
@@ -102,5 +105,32 @@ impl GameBoard {
                 None => return,
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::test_utils::{
+        get_example_damage_action, get_example_heal_action, get_populated_player_hand,
+    };
+
+    fn get_example_board() -> GameBoard {
+        let p1_hand = get_populated_player_hand(10);
+        let p2_hand = get_populated_player_hand(12);
+        let game_board = GameBoard {
+            player_1_hand: p1_hand,
+            player_1_deck: RemainingDeck::new(vec![], None),
+            player_2_hand: p2_hand,
+            player_2_deck: RemainingDeck::new(vec![], None),
+            game_phase: GamePhase::Player1Turn,
+        };
+        game_board
+    }
+
+    #[test]
+    fn test_take_single_action_damage() {
+        let game_board = get_example_board();
+        let action_card = get_example_damage_action(5, 0);
     }
 }

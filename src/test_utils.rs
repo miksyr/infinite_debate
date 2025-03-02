@@ -2,11 +2,27 @@
 use crate::entities::{AbilityType, Action, Card, CoreSchool};
 #[cfg(test)]
 use crate::entities::{InPlayPhilosopher, Philosopher};
+#[cfg(test)]
+use crate::player::PlayerHand;
 
 #[cfg(test)]
 pub fn get_example_in_play_philosopher(name: String, starting_health: u8) -> InPlayPhilosopher {
     let example_philosopher = Philosopher::new(name, CoreSchool::Rationalist, starting_health);
     InPlayPhilosopher::new(example_philosopher)
+}
+
+#[cfg(test)]
+pub fn get_populated_player_hand(in_play_philosopher_health: u8) -> PlayerHand {
+    let example_philosopher = Philosopher::new(
+        "test".into(),
+        CoreSchool::Skeptic,
+        in_play_philosopher_health,
+    );
+    let player_hand = PlayerHand {
+        active_philosopher: Some(InPlayPhilosopher::new(example_philosopher)),
+        inactive_cards: get_example_cards(),
+    };
+    player_hand
 }
 
 #[cfg(test)]
