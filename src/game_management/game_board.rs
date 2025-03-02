@@ -192,8 +192,9 @@ mod tests {
         let duration = 4;
         let mut game_board = get_example_board();
         let action_card = unwrap_action_card(get_example_damage_action(expected_damage, duration));
-        let target_initial_health = game_board
-            .get_target(&action_card.ability_type)
+        let target = game_board.get_target(&action_card.ability_type);
+
+        let target_initial_health = target
             .as_ref()
             .expect("target philosopher not found")
             .remaining_health();
@@ -202,15 +203,11 @@ mod tests {
             &action_card,
             target_initial_health - expected_damage,
         );
-        let num_effects = game_board
-            .get_target(&action_card.ability_type)
-            .as_ref()
-            .expect("target philosopher not found")
-            .effects
-            .len();
+
+        let target = game_board.get_target(&action_card.ability_type).unwrap();
+        let num_effects = target.effects.len();
         assert_eq!(num_effects, 1);
-        let target = game_board.get_target(&action_card.ability_type);
-        let applied_effect = &target.unwrap().effects[0];
+        let applied_effect = &target.effects[0];
         if let Effect::Poison {
             damage: ab_damage,
             duration: ab_duration,
