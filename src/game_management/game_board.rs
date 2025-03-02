@@ -2,7 +2,7 @@ use crate::entities::{AbilityType, Action, Card, Effect, InPlayPhilosopher, Phil
 use crate::game_management::helper_functions;
 use crate::player::{PlayerHand, RemainingDeck};
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum GamePhase {
     Player1Turn,
     Player2Turn,
@@ -32,6 +32,18 @@ impl GameBoard {
         }
     }
 
+    fn next_phase(&mut self) {
+        match self.game_phase {
+            GamePhase::Player1Turn => self.game_phase = GamePhase::Player2Turn,
+            GamePhase::Player2Turn => self.game_phase = GamePhase::Player1Turn,
+            GamePhase::GameOver => self.game_over(),
+        }
+    }
+
+    fn game_over(&mut self) {
+        todo!()
+    }
+
     pub fn next_turn(&mut self) {
         todo!()
         // switch phase
@@ -53,7 +65,7 @@ impl GameBoard {
         for card in cards {
             match card {
                 Card::Action(action) => {
-                    self.take_single_action(action);
+                    self.take_single_action(&action);
                 }
                 Card::Philosopher(_) => continue,
                 Card::InPlayPhilosopher(_) => continue,
@@ -76,9 +88,8 @@ impl GameBoard {
         }
     }
 
-    fn take_single_action(&mut self, card: Action) {
+    fn take_single_action(&mut self, card: &Action) {
         let target = self.get_target(&card.ability_type);
-
         match card.ability_type {
             AbilityType::Heal { heal, duration } => match target {
                 Some(phil) => {
@@ -129,8 +140,35 @@ mod tests {
     }
 
     #[test]
+    fn test_next_phase() {
+        let mut game_board = get_example_board();
+        assert_eq!(game_board.game_phase, GamePhase::Player1Turn);
+        game_board.next_phase();
+        assert_eq!(game_board.game_phase, GamePhase::Player2Turn);
+    }
+
+    #[test]
     fn test_take_single_action_damage() {
-        let game_board = get_example_board();
-        let action_card = get_example_damage_action(5, 0);
+        let expected_damage = 5;
+        let mut game_board = get_example_board();
+        let action_card = get_example_damage_action(expected_damage, 0);
+        let action_card = if let Card::Action(a) = action_card {
+            // extracting internal action card (a)
+            a
+        } else {
+            panic!("Expected Action card")
+        };
+        let target_initial_health = game_board
+            .get_target(&action_card.ability_type)
+            .as_ref()
+            .expect("target philosopher not found")
+            .remaining_health();
+        game_board.take_single_action(&action_card);
+        let post_action_health = game_board
+            .get_target(&action_card.ability_type)
+            .as_ref()
+            .expect("post-action philosopher not found")
+            .remaining_health();
+        assert_eq!(post_action_health, target_initial_health - expected_damage);
     }
 }
