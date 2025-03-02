@@ -209,11 +209,8 @@ mod tests {
             .effects
             .len();
         assert_eq!(num_effects, 1);
-        let applied_effect = &game_board
-            .get_target(&action_card.ability_type)
-            .as_ref()
-            .expect("target philosopher not found")
-            .effects[0];
+        let target = game_board.get_target(&action_card.ability_type);
+        let applied_effect = &target.unwrap().effects[0];
         if let Effect::Poison {
             damage: ab_damage,
             duration: ab_duration,
