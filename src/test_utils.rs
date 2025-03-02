@@ -1,7 +1,13 @@
 #[cfg(test)]
-use crate::entities::Philosopher;
-#[cfg(test)]
 use crate::entities::{AbilityType, Action, Card, CoreSchool};
+#[cfg(test)]
+use crate::entities::{InPlayPhilosopher, Philosopher};
+
+#[cfg(test)]
+pub fn get_example_in_play_philosopher(name: String, starting_health: u8) -> InPlayPhilosopher {
+    let example_philosopher = Philosopher::new(name, CoreSchool::Rationalist, starting_health);
+    InPlayPhilosopher::new(example_philosopher)
+}
 
 #[cfg(test)]
 pub fn get_example_damage_action(damage: u8, duration: u8) -> Card {
