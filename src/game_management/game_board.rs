@@ -100,6 +100,7 @@ impl GameBoard {
     pub fn next_turn(&mut self) {
         todo!()
         // switch phase
+        // apply cards
         // apply effects
     }
 }
