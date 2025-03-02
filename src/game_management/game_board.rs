@@ -32,6 +32,13 @@ impl GameBoard {
         }
     }
 
+    pub fn next_turn(&mut self) {
+        todo!()
+        // switch phase
+        // apply cards
+        // apply effects
+    }
+
     pub fn active_player_data(
         &self,
     ) -> Result<(&PlayerHand, &RemainingDeck), Box<dyn std::error::Error>> {
@@ -95,12 +102,5 @@ impl GameBoard {
                 None => return,
             },
         }
-    }
-
-    pub fn next_turn(&mut self) {
-        todo!()
-        // switch phase
-        // apply cards
-        // apply effects
     }
 }
