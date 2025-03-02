@@ -147,28 +147,82 @@ mod tests {
         assert_eq!(game_board.game_phase, GamePhase::Player2Turn);
     }
 
-    #[test]
-    fn test_take_single_action_damage() {
-        let expected_damage = 5;
-        let mut game_board = get_example_board();
-        let action_card = get_example_damage_action(expected_damage, 0);
-        let action_card = if let Card::Action(a) = action_card {
-            // extracting internal action card (a)
-            a
-        } else {
-            panic!("Expected Action card")
-        };
-        let target_initial_health = game_board
-            .get_target(&action_card.ability_type)
-            .as_ref()
-            .expect("target philosopher not found")
-            .remaining_health();
+    fn assert_health_after_action(
+        game_board: &mut GameBoard,
+        action_card: &Action,
+        expected_health: u8,
+    ) {
         game_board.take_single_action(&action_card);
         let post_action_health = game_board
             .get_target(&action_card.ability_type)
             .as_ref()
             .expect("post-action philosopher not found")
             .remaining_health();
-        assert_eq!(post_action_health, target_initial_health - expected_damage);
+        assert_eq!(post_action_health, expected_health);
+    }
+
+    fn unwrap_action_card(card: Card) -> Action {
+        if let Card::Action(a) = card {
+            a
+        } else {
+            panic!("Expected 'Action' card")
+        }
+    }
+
+    #[test]
+    fn test_take_single_action_damage() {
+        let expected_damage = 5;
+        let mut game_board = get_example_board();
+        let action_card = unwrap_action_card(get_example_damage_action(expected_damage, 0));
+        let target_initial_health = game_board
+            .get_target(&action_card.ability_type)
+            .as_ref()
+            .expect("target philosopher not found")
+            .remaining_health();
+        assert_health_after_action(
+            &mut game_board,
+            &action_card,
+            target_initial_health - expected_damage,
+        );
+    }
+
+    #[test]
+    fn test_take_duration_damage() {
+        let expected_damage = 5;
+        let duration = 4;
+        let mut game_board = get_example_board();
+        let action_card = unwrap_action_card(get_example_damage_action(expected_damage, duration));
+        let target_initial_health = game_board
+            .get_target(&action_card.ability_type)
+            .as_ref()
+            .expect("target philosopher not found")
+            .remaining_health();
+        assert_health_after_action(
+            &mut game_board,
+            &action_card,
+            target_initial_health - expected_damage,
+        );
+        let num_effects = game_board
+            .get_target(&action_card.ability_type)
+            .as_ref()
+            .expect("target philosopher not found")
+            .effects
+            .len();
+        assert_eq!(num_effects, 1);
+        let applied_effect = &game_board
+            .get_target(&action_card.ability_type)
+            .as_ref()
+            .expect("target philosopher not found")
+            .effects[0];
+        if let Effect::Poison {
+            damage: ab_damage,
+            duration: ab_duration,
+        } = *applied_effect
+        {
+            assert_eq!(ab_damage, expected_damage);
+            assert_eq!(ab_duration, duration - 1);
+        } else {
+            panic!("Ability wasn't Damage/Poison!")
+        }
     }
 }
