@@ -126,13 +126,11 @@ impl GameBoard {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils::{
-        get_example_damage_action, get_example_heal_action, get_populated_player_hand,
-    };
+    use crate::test_utils;
 
     fn get_example_board() -> GameBoard {
-        let p1_hand = get_populated_player_hand(10);
-        let p2_hand = get_populated_player_hand(12);
+        let p1_hand = test_utils::get_populated_player_hand(10);
+        let p2_hand = test_utils::get_populated_player_hand(12);
         let game_board = GameBoard {
             player_1_hand: p1_hand,
             player_1_deck: RemainingDeck::new(vec![], None),
@@ -177,7 +175,8 @@ mod tests {
     fn test_take_single_action_damage_no_duration() {
         let expected_damage = 5;
         let mut game_board = get_example_board();
-        let action_card = unwrap_action_card(get_example_damage_action(expected_damage, 0));
+        let action_card =
+            unwrap_action_card(test_utils::get_example_damage_action(expected_damage, 0));
         let target_initial_health = game_board
             .get_target(&action_card.ability_type)
             .as_ref()
@@ -195,7 +194,10 @@ mod tests {
         let expected_damage = 5;
         let duration = 4;
         let mut game_board = get_example_board();
-        let action_card = unwrap_action_card(get_example_damage_action(expected_damage, duration));
+        let action_card = unwrap_action_card(test_utils::get_example_damage_action(
+            expected_damage,
+            duration,
+        ));
         let target = game_board.get_target(&action_card.ability_type);
 
         let target_initial_health = target
@@ -229,7 +231,7 @@ mod tests {
         let initial_damage = 5;
         let heal = 2;
         let mut game_board = get_example_board();
-        let action_card = unwrap_action_card(get_example_heal_action(heal, 0));
+        let action_card = unwrap_action_card(test_utils::get_example_heal_action(heal, 0));
         let target = game_board.get_target(&action_card.ability_type).unwrap();
         let target_initial_health = target.remaining_health();
         target.apply_direct_damage(initial_damage);
@@ -245,7 +247,8 @@ mod tests {
         let expected_heal = 6;
         let duration = 2;
         let mut game_board = get_example_board();
-        let action_card = unwrap_action_card(get_example_heal_action(expected_heal, duration));
+        let action_card =
+            unwrap_action_card(test_utils::get_example_heal_action(expected_heal, duration));
         let target = game_board.get_target(&action_card.ability_type);
         let target_initial_health = target
             .as_ref()
