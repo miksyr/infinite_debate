@@ -214,6 +214,7 @@ dependencies = [
  "ratatui",
  "serde",
  "serde_yaml",
+ "uuid",
 ]
 
 [[package]]
@@ -595,6 +596,15 @@ name = "unsafe-libyaml"
 version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "673aac59facbab8a9007c7f6108d11f63b603f7cabff99fabf650fea5c32b861"
+
+[[package]]
+name = "uuid"
+version = "1.15.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0f540e3240398cce6128b64ba83fdbdd86129c16a3aa1a3a252efd66eb3d587"
+dependencies = [
+ "getrandom",
+]
 
 [[package]]
 name = "wasi"
