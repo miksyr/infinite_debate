@@ -32,7 +32,7 @@ impl GameBoard {
         }
     }
 
-    fn next_phase(&mut self) {
+    fn update_game_phase(&mut self) {
         match self.game_phase {
             GamePhase::Player1Turn => self.game_phase = GamePhase::Player2Turn,
             GamePhase::Player2Turn => self.game_phase = GamePhase::Player1Turn,
@@ -52,29 +52,30 @@ impl GameBoard {
     }
 
     pub fn active_player_data(
-        &self,
-    ) -> Result<(&PlayerHand, &RemainingDeck), Box<dyn std::error::Error>> {
+        &mut self,
+    ) -> Result<(&mut PlayerHand, &mut RemainingDeck), Box<dyn std::error::Error>> {
         match self.game_phase {
-            GamePhase::Player1Turn => Ok((&self.player_1_hand, &self.player_1_deck)),
-            GamePhase::Player2Turn => Ok((&self.player_2_hand, &self.player_2_deck)),
+            GamePhase::Player1Turn => Ok((&mut self.player_1_hand, &mut self.player_1_deck)),
+            GamePhase::Player2Turn => Ok((&mut self.player_2_hand, &mut self.player_2_deck)),
             _ => Err("bad game phase".into()),
         }
     }
 
-    pub fn apply_cards(&mut self, cards: Vec<Card>) {
+    pub fn apply_cards(&mut self, cards: Vec<Card>) -> Result<(), Box<dyn std::error::Error>> {
         for card in cards {
             match card {
-                Card::Action(action) => {
-                    self.take_single_action(&action);
-                }
+                Card::Action(action) => self.take_single_action(&action),
                 Card::Philosopher(p) => self.play_philosopher(Card::Philosopher(p)),
                 Card::InPlayPhilosopher(p) => self.play_philosopher(Card::InPlayPhilosopher(p)),
-            }
+            }?
         }
+        Ok(())
     }
 
-    fn play_philosopher(&mut self, philosopher: Card) {
-        todo!()
+    fn play_philosopher(&mut self, philosopher: Card) -> Result<(), Box<dyn std::error::Error>> {
+        let (active_player_hand, _active_player_deck) = self.active_player_data()?;
+        active_player_hand.play_philosopher(philosopher)?;
+        Ok(())
     }
 
     fn get_target(&mut self, ability_type: &AbilityType) -> Option<&mut InPlayPhilosopher> {
@@ -92,7 +93,7 @@ impl GameBoard {
         }
     }
 
-    fn take_single_action(&mut self, card: &Action) {
+    fn take_single_action(&mut self, card: &Action) -> Result<(), Box<dyn std::error::Error>> {
         let target = self.get_target(&card.ability_type);
         match card.ability_type {
             AbilityType::Heal { heal, duration } => match target {
@@ -104,8 +105,9 @@ impl GameBoard {
                             duration: duration - 1,
                         });
                     }
+                    Ok(())
                 }
-                None => return,
+                None => Ok(()),
             },
             AbilityType::Damage { damage, duration } => match target {
                 Some(phil) => {
@@ -116,8 +118,9 @@ impl GameBoard {
                             duration: duration - 1,
                         });
                     }
+                    Ok(())
                 }
-                None => return,
+                None => Ok(()),
             },
         }
     }
@@ -126,7 +129,8 @@ impl GameBoard {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::test_utils;
+    use crate::{entities::CoreSchool, test_utils};
+    use uuid::Uuid;
 
     fn get_example_board() -> GameBoard {
         let p1_hand = test_utils::get_populated_player_hand(10);
@@ -145,22 +149,8 @@ mod tests {
     fn test_next_phase() {
         let mut game_board = get_example_board();
         assert_eq!(game_board.game_phase, GamePhase::Player1Turn);
-        game_board.next_phase();
+        game_board.update_game_phase();
         assert_eq!(game_board.game_phase, GamePhase::Player2Turn);
-    }
-
-    fn assert_health_after_action(
-        game_board: &mut GameBoard,
-        action_card: &Action,
-        expected_health: u8,
-    ) {
-        game_board.take_single_action(&action_card);
-        let post_action_health = game_board
-            .get_target(&action_card.ability_type)
-            .as_ref()
-            .expect("post-action philosopher not found")
-            .remaining_health();
-        assert_eq!(post_action_health, expected_health);
     }
 
     fn unwrap_action_card(card: Card) -> Action {
@@ -179,14 +169,14 @@ mod tests {
             unwrap_action_card(test_utils::get_example_damage_action(expected_damage, 0));
         let target_initial_health = game_board
             .get_target(&action_card.ability_type)
-            .as_ref()
             .expect("target philosopher not found")
             .remaining_health();
-        assert_health_after_action(
-            &mut game_board,
-            &action_card,
-            target_initial_health - expected_damage,
-        );
+        let _ = game_board.take_single_action(&action_card);
+        let post_action_health = game_board
+            .get_target(&action_card.ability_type)
+            .expect("post-action philosopher not found")
+            .remaining_health();
+        assert_eq!(post_action_health, target_initial_health - expected_damage);
     }
 
     #[test]
@@ -198,22 +188,20 @@ mod tests {
             expected_damage,
             duration,
         ));
-        let target = game_board.get_target(&action_card.ability_type);
-
-        let target_initial_health = target
-            .as_ref()
-            .expect("target philosopher not found")
-            .remaining_health();
-        assert_health_after_action(
-            &mut game_board,
-            &action_card,
-            target_initial_health - expected_damage,
+        let target = game_board
+            .get_target(&action_card.ability_type)
+            .expect("target philosopher not found");
+        let target_initial_health = target.remaining_health();
+        let _ = game_board.take_single_action(&action_card);
+        let post_action_target = game_board
+            .get_target(&action_card.ability_type)
+            .expect("post-action philosopher not found");
+        assert_eq!(
+            post_action_target.remaining_health(),
+            target_initial_health - expected_damage
         );
-
-        let target = game_board.get_target(&action_card.ability_type).unwrap();
-        let num_effects = target.effects.len();
-        assert_eq!(num_effects, 1);
-        let applied_effect = &target.effects[0];
+        assert_eq!(post_action_target.effects.len(), 1);
+        let applied_effect = &post_action_target.effects[0];
         if let Effect::Poison {
             damage: ab_damage,
             duration: ab_duration,
@@ -235,10 +223,14 @@ mod tests {
         let target = game_board.get_target(&action_card.ability_type).unwrap();
         let target_initial_health = target.remaining_health();
         target.apply_direct_damage(initial_damage);
-        assert_health_after_action(
-            &mut game_board,
-            &action_card,
-            target_initial_health - initial_damage + heal,
+        let _ = game_board.take_single_action(&action_card);
+        let post_action_health = game_board
+            .get_target(&action_card.ability_type)
+            .expect("post-action philosopher not found")
+            .remaining_health();
+        assert_eq!(
+            post_action_health,
+            target_initial_health - initial_damage + heal
         );
     }
 
@@ -251,15 +243,15 @@ mod tests {
             unwrap_action_card(test_utils::get_example_heal_action(expected_heal, duration));
         let target = game_board.get_target(&action_card.ability_type);
         let target_initial_health = target
-            .as_ref()
             .expect("target philosopher not found")
             .remaining_health();
-        assert_health_after_action(&mut game_board, &action_card, target_initial_health);
-
-        let target = game_board.get_target(&action_card.ability_type).unwrap();
-        let num_effects = target.effects.len();
-        assert_eq!(num_effects, 1);
-        let applied_effect = &target.effects[0];
+        let _ = game_board.take_single_action(&action_card);
+        let post_action_target = game_board
+            .get_target(&action_card.ability_type)
+            .expect("post-action philosopher not found");
+        assert_eq!(post_action_target.remaining_health(), target_initial_health);
+        assert_eq!(post_action_target.effects.len(), 1);
+        let applied_effect = &post_action_target.effects[0];
         if let Effect::Recovery {
             heal: ab_heal,
             duration: ab_duration,
@@ -270,5 +262,63 @@ mod tests {
         } else {
             panic!("Ability wasn't Damage/Poison!")
         }
+    }
+
+    #[test]
+    fn test_apply_cards_damage_and_then_play_philosopher() {
+        let expected_damage = 3;
+        let expected_philosopher_name = Uuid::new_v4().to_string();
+        let mut game_board = get_example_board();
+        let action_card =
+            unwrap_action_card(test_utils::get_example_damage_action(expected_damage, 3));
+        let ability_type = action_card.ability_type.clone();
+        let target = game_board
+            .get_target(&ability_type)
+            .expect("target philosopher not found");
+        let target_initial_health = target.remaining_health();
+        let cards = vec![
+            Card::Action(action_card),
+            Card::Philosopher(Philosopher::new(
+                expected_philosopher_name.clone(),
+                CoreSchool::Skeptic,
+                13,
+            )),
+        ];
+        let _ = game_board.apply_cards(cards);
+        let post_action_target = game_board
+            .get_target(&ability_type)
+            .expect("target philosopher not found");
+        assert_eq!(
+            post_action_target.remaining_health(),
+            target_initial_health - expected_damage
+        );
+        let (active_player_hand, _d) = game_board.active_player_data().unwrap();
+        let active_philosopher = active_player_hand.active_philosopher.as_ref().unwrap();
+        assert_eq!(
+            active_philosopher.philosopher.name,
+            expected_philosopher_name
+        );
+    }
+
+    #[test]
+    fn test_apply_cards_in_play_philosopher() {
+        let mut game_board = get_example_board();
+        let expected_name = Uuid::new_v4().to_string();
+        let cards = vec![Card::InPlayPhilosopher(
+            test_utils::get_example_in_play_philosopher(expected_name.clone(), 3),
+        )];
+        let _ = game_board.apply_cards(cards);
+        let (active_player_hand, _d) = game_board.active_player_data().unwrap();
+        let active_philosopher = active_player_hand.active_philosopher.as_ref().unwrap();
+        assert_eq!(active_philosopher.philosopher.name, expected_name)
+    }
+
+    #[test]
+    fn test_apply_cards_no_cards() {
+        let mut game_board = get_example_board();
+        let game_board_repr = format!("{:?}", game_board);
+        let cards = vec![];
+        let _ = game_board.apply_cards(cards);
+        assert_eq!(format!("{:?}", game_board), game_board_repr)
     }
 }

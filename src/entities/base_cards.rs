@@ -10,7 +10,7 @@ pub enum CoreSchool {
     Skeptic,
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(tag = "kind", rename_all = "PascalCase")]
 pub enum AbilityType {
     Damage { damage: u8, duration: u8 },
