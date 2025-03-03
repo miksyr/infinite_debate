@@ -10,15 +10,33 @@ pub enum GamePhase {
 }
 
 #[derive(Debug)]
+struct GameConfig {
+    num_cards_played_per_turn: u8,
+    num_cards_drawn_per_turn: u8,
+    max_cards_in_hand: u8,
+}
+impl Default for GameConfig {
+    fn default() -> Self {
+        Self {
+            num_cards_played_per_turn: 3,
+            num_cards_drawn_per_turn: 2,
+            max_cards_in_hand: 7,
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct GameBoard {
     pub player_1_hand: PlayerHand,
     pub player_1_deck: RemainingDeck,
     pub player_2_hand: PlayerHand,
     pub player_2_deck: RemainingDeck,
     pub game_phase: GamePhase,
+    game_config: GameConfig,
 }
 impl GameBoard {
-    pub fn new() -> Self {
+    pub fn new(game_config: Option<GameConfig>) -> Self {
+        let config = game_config.unwrap_or_default();
         let (p1_start_hand, p1_deck) =
             helper_functions::get_intial_deck().expect("Can't get player1 hand");
         let (p2_start_hand, p2_deck) =
@@ -29,6 +47,7 @@ impl GameBoard {
             player_2_hand: p2_start_hand,
             player_2_deck: p2_deck,
             game_phase: GamePhase::Player1Turn,
+            game_config: config,
         }
     }
 
@@ -44,11 +63,37 @@ impl GameBoard {
         todo!()
     }
 
-    pub fn next_turn(&mut self) {
-        todo!()
-        // switch phase
+    pub fn next_turn(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let (mut active_hand, _deck) = self
+            .active_player_data()
+            .expect("can't get active player for next turn");
+        let (mut inactive_hand, mut inactive_deck) = self
+            .inactive_player_data()
+            .expect("can't get inactive player for next turn");
+
+        // apply existing effects
+        if let Some(p) = inactive_hand.active_philosopher.as_mut() {
+            p.apply_existing_effects();
+        }
+
         // apply cards
-        // apply effects
+
+        // draw cards for next player
+        // let num_available_slots_in_hand: u8 = self.game_config.max_cards_in_hand
+        //     - inactive_hand
+        //         .inactive_cards
+        //         .len()
+        //         .try_into()
+        //         .unwrap_or(u8::MAX);
+        // let num_cards_to_draw: u8 = self
+        //     .game_config
+        //     .num_cards_drawn_per_turn
+        //     .min(num_available_slots_in_hand);
+        // inactive_deck.draw_new_cards(self.game_config.num_cards_drawn_per_turn);
+
+        // switch phase
+        self.update_game_phase();
+        Ok(())
     }
 
     pub fn active_player_data(
@@ -57,6 +102,16 @@ impl GameBoard {
         match self.game_phase {
             GamePhase::Player1Turn => Ok((&mut self.player_1_hand, &mut self.player_1_deck)),
             GamePhase::Player2Turn => Ok((&mut self.player_2_hand, &mut self.player_2_deck)),
+            _ => Err("bad game phase".into()),
+        }
+    }
+
+    pub fn inactive_player_data(
+        &mut self,
+    ) -> Result<(&mut PlayerHand, &mut RemainingDeck), Box<dyn std::error::Error>> {
+        match self.game_phase {
+            GamePhase::Player1Turn => Ok((&mut self.player_2_hand, &mut self.player_2_deck)),
+            GamePhase::Player2Turn => Ok((&mut self.player_1_hand, &mut self.player_1_deck)),
             _ => Err("bad game phase".into()),
         }
     }
@@ -141,6 +196,7 @@ mod tests {
             player_2_hand: p2_hand,
             player_2_deck: RemainingDeck::new(vec![], None),
             game_phase: GamePhase::Player1Turn,
+            game_config: GameConfig::default(),
         };
         game_board
     }
