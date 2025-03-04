@@ -78,7 +78,7 @@ pub struct GameApp {
 
 impl GameApp {
     pub fn new() -> Self {
-        let game_board = GameBoard::new();
+        let mut game_board = GameBoard::new();
         let current_player_data = game_board.active_player_data().unwrap();
         let current_player_hand = CurrentPlayerHand::from_player_hand(current_player_data.0);
         GameApp {

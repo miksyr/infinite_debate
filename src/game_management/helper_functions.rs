@@ -3,7 +3,9 @@ use crate::player::{PlayerHand, RemainingDeck};
 use rand::{rng, Rng};
 use serde_yaml;
 
-pub fn get_intial_deck() -> Result<(PlayerHand, RemainingDeck), Box<dyn std::error::Error>> {
+pub fn get_intial_deck(
+    max_cards_in_hand: &u8,
+) -> Result<(PlayerHand, RemainingDeck), Box<dyn std::error::Error>> {
     let mut philosophers = get_philosopher_cards()?;
     let random_index = rng().random_range(0..philosophers.len());
     let initial_philosopher = philosophers.remove(random_index);
@@ -15,6 +17,7 @@ pub fn get_intial_deck() -> Result<(PlayerHand, RemainingDeck), Box<dyn std::err
     let mut player_hand = PlayerHand {
         active_philosopher: None,
         inactive_cards: vec![initial_philosopher],
+        max_cards_in_hand: *max_cards_in_hand,
     };
     player_hand.add_cards_to_hand(player_initial_cards?)?;
     Ok((player_hand, remaining_deck))

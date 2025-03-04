@@ -4,6 +4,7 @@ use crate::entities::{Card, InPlayPhilosopher};
 pub struct PlayerHand {
     pub active_philosopher: Option<InPlayPhilosopher>,
     pub inactive_cards: Vec<Box<Card>>,
+    pub max_cards_in_hand: u8,
 }
 impl PlayerHand {
     pub fn add_cards_to_hand(
@@ -34,6 +35,15 @@ impl PlayerHand {
             Card::Action(_) => return Err("Action card played as philosopher".into()),
         }
     }
+
+    pub fn num_available_slots_in_hand(&self) -> u8 {
+        self.max_cards_in_hand.saturating_sub(
+            self.inactive_cards
+                .len()
+                .try_into()
+                .expect("can't get num available slots in hand"),
+        )
+    }
 }
 
 #[cfg(test)]
@@ -48,6 +58,7 @@ mod tests {
         let player_hand = PlayerHand {
             active_philosopher: None,
             inactive_cards: vec![],
+            max_cards_in_hand: 7,
         };
         assert!(player_hand.active_philosopher.is_none());
         assert_eq!(player_hand.inactive_cards.len(), 0)
@@ -65,6 +76,7 @@ mod tests {
         let mut player_hand = PlayerHand {
             active_philosopher: None,
             inactive_cards: vec![],
+            max_cards_in_hand: 7,
         };
         let example_philosopher = Philosopher::new("test".into(), CoreSchool::Skeptic, 16);
         let result = player_hand.play_philosopher(Card::Philosopher(example_philosopher));
@@ -81,6 +93,7 @@ mod tests {
         let mut player_hand = PlayerHand {
             active_philosopher: None,
             inactive_cards: vec![],
+            max_cards_in_hand: 7,
         };
         let example_philosopher = Philosopher::new("test".into(), CoreSchool::Skeptic, 16);
         let ex_in_play_philos = InPlayPhilosopher::new(example_philosopher);
@@ -100,6 +113,7 @@ mod tests {
         let mut player_hand = PlayerHand {
             active_philosopher: Some(ex_in_play_philos1),
             inactive_cards: vec![],
+            max_cards_in_hand: 7,
         };
         let new_philos = Philosopher::new("expected".into(), CoreSchool::Skeptic, 16);
         let expected_in_play_philos = InPlayPhilosopher::new(new_philos);
@@ -119,6 +133,7 @@ mod tests {
         let mut player_hand = PlayerHand {
             active_philosopher: Some(ex_in_play_philos1),
             inactive_cards: vec![],
+            max_cards_in_hand: 7,
         };
         let new_philos = Philosopher::new("expected".into(), CoreSchool::Skeptic, 16);
         let result = player_hand.play_philosopher(Card::Philosopher(new_philos));
@@ -135,6 +150,7 @@ mod tests {
         let mut player_hand = PlayerHand {
             active_philosopher: None,
             inactive_cards: vec![],
+            max_cards_in_hand: 7,
         };
         let new_cards = get_example_cards();
         let num_new_cards = new_cards.len();
@@ -155,5 +171,25 @@ mod tests {
             player_hand.inactive_cards.len(),
             num_new_cards + num_existing_cards
         )
+    }
+
+    #[test]
+    fn test_num_available_slots_in_hand() {
+        let player_hand = get_populated_player_hand(16);
+        let num_existing_cards: u8 = player_hand.inactive_cards.len().try_into().unwrap();
+        assert_eq!(
+            player_hand.num_available_slots_in_hand(),
+            8 - num_existing_cards
+        );
+    }
+
+    #[test]
+    fn test_num_available_slots_in_hand_no_slots() {
+        let mut player_hand = get_populated_player_hand(16);
+        let _ = player_hand.add_cards_to_hand(get_example_cards());
+        let _ = player_hand.add_cards_to_hand(get_example_cards());
+        let _ = player_hand.add_cards_to_hand(get_example_cards());
+        let _ = player_hand.add_cards_to_hand(get_example_cards());
+        assert_eq!(player_hand.num_available_slots_in_hand(), 0);
     }
 }

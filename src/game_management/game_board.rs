@@ -36,11 +36,11 @@ pub struct GameBoard {
 }
 impl GameBoard {
     pub fn new(game_config: Option<GameConfig>) -> Self {
-        let config = game_config.unwrap_or_default();
-        let (p1_start_hand, p1_deck) =
-            helper_functions::get_intial_deck().expect("Can't get player1 hand");
-        let (p2_start_hand, p2_deck) =
-            helper_functions::get_intial_deck().expect("Can't get player2 hand");
+        let config: GameConfig = game_config.unwrap_or_default();
+        let (p1_start_hand, p1_deck) = helper_functions::get_intial_deck(&config.max_cards_in_hand)
+            .expect("Can't get player1 hand");
+        let (p2_start_hand, p2_deck) = helper_functions::get_intial_deck(&config.max_cards_in_hand)
+            .expect("Can't get player2 hand");
         GameBoard {
             player_1_hand: p1_start_hand,
             player_1_deck: p1_deck,
@@ -63,35 +63,32 @@ impl GameBoard {
         todo!()
     }
 
-    pub fn next_turn(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let (mut active_hand, _deck) = self
-            .active_player_data()
-            .expect("can't get active player for next turn");
-        let (mut inactive_hand, mut inactive_deck) = self
+    fn apply_effects(&mut self) {
+        let (inactive_hand, _inactive_deck) = self
             .inactive_player_data()
-            .expect("can't get inactive player for next turn");
-
-        // apply existing effects
+            .expect("can't get inactive player for applying effects");
         if let Some(p) = inactive_hand.active_philosopher.as_mut() {
             p.apply_existing_effects();
         }
+    }
 
-        // apply cards
+    fn draw_cards_for_next_player(&mut self) {
+        // extract value below to avoid borrow checker issues with mutable references to self
+        let num_cards_per_turn = self.game_config.num_cards_drawn_per_turn;
+        let (inactive_hand, inactive_deck) = self
+            .inactive_player_data()
+            .expect("can't get inactive player for drawing cards");
+        let num_cards_to_draw = num_cards_per_turn.min(inactive_hand.num_available_slots_in_hand());
+        let new_cards = inactive_deck
+            .draw_new_cards(num_cards_to_draw)
+            .expect("couldn't draw new cards for next player");
+        let _ = inactive_hand.add_cards_to_hand(new_cards);
+    }
 
-        // draw cards for next player
-        // let num_available_slots_in_hand: u8 = self.game_config.max_cards_in_hand
-        //     - inactive_hand
-        //         .inactive_cards
-        //         .len()
-        //         .try_into()
-        //         .unwrap_or(u8::MAX);
-        // let num_cards_to_draw: u8 = self
-        //     .game_config
-        //     .num_cards_drawn_per_turn
-        //     .min(num_available_slots_in_hand);
-        // inactive_deck.draw_new_cards(self.game_config.num_cards_drawn_per_turn);
-
-        // switch phase
+    pub fn process_turn(&mut self, cards: Vec<Card>) -> Result<(), Box<dyn std::error::Error>> {
+        self.apply_effects();
+        self.apply_cards(cards)?;
+        self.draw_cards_for_next_player();
         self.update_game_phase();
         Ok(())
     }

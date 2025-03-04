@@ -21,6 +21,7 @@ pub fn get_populated_player_hand(in_play_philosopher_health: u8) -> PlayerHand {
     let player_hand = PlayerHand {
         active_philosopher: Some(InPlayPhilosopher::new(example_philosopher)),
         inactive_cards: get_example_cards(),
+        max_cards_in_hand: 8,
     };
     player_hand
 }
