@@ -1,7 +1,7 @@
 use crate::entities::DamageCounter;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum Effect {
     Poison { damage: u8, duration: u8 },
     Recovery { heal: u8, duration: u8 },

@@ -87,6 +87,11 @@ impl GameApp {
         Ok(())
     }
 
+    fn reset_card_selection_state(&mut self) {
+        let num_cards = self.game_board.game_config.max_cards_in_hand();
+        self.selected_cards = vec![CardSelectionState::NotSelected; num_cards.into()];
+    }
+
     fn submit_card_selections(&mut self) {
         let (active_hand, _active_deck) = self
             .game_board
@@ -107,10 +112,12 @@ impl GameApp {
             .collect();
 
         if !selected_cards.is_empty() {
+            let owned_cards: Vec<Card> = selected_cards.into_iter().cloned().collect();
             self.game_board
-                .process_turn(selected_cards)
+                .process_turn(owned_cards)
                 .expect("couldn't process turn");
         }
+        self.reset_card_selection_state();
     }
 }
 

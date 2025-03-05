@@ -3,7 +3,7 @@ use crate::entities::InPlayPhilosopher;
 use serde::{Deserialize, Serialize};
 use std::fmt::Debug;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum CoreSchool {
     Rationalist,
     Empiricist,
@@ -17,14 +17,14 @@ pub enum AbilityType {
     Heal { heal: u8, duration: u8 },
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum Card {
     Action(Action),
     Philosopher(Philosopher),
     InPlayPhilosopher(InPlayPhilosopher),
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Action {
     name: String,
     description: String,
@@ -50,7 +50,7 @@ impl Action {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Philosopher {
     pub name: String,
     pub school: CoreSchool,

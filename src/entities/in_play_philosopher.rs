@@ -1,6 +1,6 @@
 use crate::entities::{Effect, Philosopher};
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct DamageCounter {
     pub damage_counter: u8,
 }
@@ -14,13 +14,13 @@ impl DamageCounter {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq)]
 enum DeathStatus {
     Dead,
     Alive,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct InPlayPhilosopher {
     pub philosopher: Philosopher,
     pub damage_counter: DamageCounter,
