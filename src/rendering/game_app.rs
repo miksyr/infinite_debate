@@ -32,9 +32,9 @@ impl GameApp {
         }
     }
 
-    fn get_current_player_hand(&self) -> Result<CurrentPlayerHand, Box<dyn std::error::Error>> {
-        let current_player_data = self.game_board.active_player_data()?;
-        let current_player_hand = CurrentPlayerHand::from_player_hand(current_player_data.0);
+    fn get_current_player_hand(&mut self) -> Result<CurrentPlayerHand, Box<dyn std::error::Error>> {
+        let (in_play_hand, _in_play_deck) = self.game_board.active_player_data()?;
+        let current_player_hand = CurrentPlayerHand::from_player_hand(in_play_hand);
         Ok(current_player_hand)
     }
 
@@ -56,6 +56,9 @@ impl GameApp {
             KeyCode::Char('q') | KeyCode::Esc => self.exit = true,
             KeyCode::Up | KeyCode::Char('w') => self.select_previous(),
             KeyCode::Down | KeyCode::Char('s') => self.select_next(),
+            KeyCode::Right | KeyCode::Char('d') => self
+                .toggle_card_selection()
+                .expect("Couldn't toggle card selection"),
             KeyCode::Enter => self.submit_card_selections(),
             _ => {}
         }
@@ -70,8 +73,9 @@ impl GameApp {
     }
 
     fn toggle_card_selection(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let selected_card_index = self.current_card_state.selected();
         let mut in_play_hand = self.get_current_player_hand()?;
-        if let Some(i) = self.current_card_state.selected() {
+        if let Some(i) = selected_card_index {
             in_play_hand.toggle_card_state(i);
         }
         Ok(())
@@ -139,10 +143,9 @@ impl GameApp {
             .highlight_symbol(">")
             .highlight_spacing(HighlightSpacing::Always);
 
-        StatefulWidget::render(list, area, buf, &mut ListState::default());
+        StatefulWidget::render(list, area, buf, &mut self.current_card_state);
     }
 }
-
 impl Widget for &mut GameApp {
     fn render(self, area: Rect, buf: &mut Buffer) {
         let [game_board_area, footer_area] =
