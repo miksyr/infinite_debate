@@ -32,7 +32,7 @@ impl<'a> From<&'a AvailablePlayerCard<'a>> for ListItem<'a> {
     }
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum CardSelectionState {
     Selected,
     NotSelected,

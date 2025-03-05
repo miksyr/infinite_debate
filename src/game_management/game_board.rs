@@ -33,10 +33,10 @@ impl Default for GameConfig {
 #[derive(Debug)]
 pub struct GameBoard {
     pub player_1_hand: PlayerHand,
-    pub player_1_deck: RemainingDeck,
+    player_1_deck: RemainingDeck,
     pub player_2_hand: PlayerHand,
-    pub player_2_deck: RemainingDeck,
-    pub game_phase: GamePhase,
+    player_2_deck: RemainingDeck,
+    game_phase: GamePhase,
     pub game_config: GameConfig,
 }
 impl GameBoard {

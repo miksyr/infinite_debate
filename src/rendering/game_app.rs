@@ -10,6 +10,7 @@ use ratatui::{
     DefaultTerminal,
 };
 
+use crate::entities::Card;
 use crate::game_management::GameBoard;
 use crate::rendering::{AvailablePlayerCard, CardSelectionState};
 
@@ -71,26 +72,53 @@ impl GameApp {
 
     fn toggle_card_selection(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         if let Some(i) = self.current_card_state.selected() {
-            if let Some(state) = self.selected_cards.get_mut(i) {
-                *state = match state {
-                    CardSelectionState::NotSelected => CardSelectionState::Selected,
-                    CardSelectionState::Selected => CardSelectionState::NotSelected,
-                };
+            let selected_count = self
+                .selected_cards
+                .iter()
+                .filter(|&&s| s == CardSelectionState::Selected)
+                .count();
+
+            if self.selected_cards[i] == CardSelectionState::Selected {
+                self.selected_cards[i] = CardSelectionState::NotSelected;
+            } else if selected_count < 3 {
+                self.selected_cards[i] = CardSelectionState::Selected;
             }
         }
         Ok(())
     }
 
     fn submit_card_selections(&mut self) {
-        todo!()
+        let (active_hand, _active_deck) = self
+            .game_board
+            .active_player_data()
+            .expect("can't get active player data");
+
+        let selected_cards: Vec<&Card> = active_hand
+            .inactive_cards
+            .iter()
+            .enumerate()
+            .filter_map(|(i, card)| {
+                if self.selected_cards.get(i) == Some(&CardSelectionState::Selected) {
+                    Some(card.as_ref())
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        if !selected_cards.is_empty() {
+            self.game_board
+                .process_turn(selected_cards)
+                .expect("couldn't process turn");
+        }
     }
 }
 
 // actual rendering logic
 impl GameApp {
-    fn render_footer(area: Rect, buf: &mut Buffer) {
+    fn render_footer(&self, area: Rect, buf: &mut Buffer) {
         Paragraph::new(
-            "Use ↓↑ to move, ← to unselect all, → to add/remove card, [Enter] to end turn",
+            format!("Round: {} --- Use ↓↑ to move, ← to unselect all, → to add/remove card, [Enter] to end turn", self.current_round),
         )
         .centered()
         .render(area, buf);
@@ -99,33 +127,36 @@ impl GameApp {
     fn render_opponent_philosophers(&mut self, area: Rect, buf: &mut Buffer) {
         //  TODO: put actual logic here
         let block = Block::bordered().title(Line::raw("Opponent Philosophers").centered());
-        Paragraph::new(format!(
-            "{:?}",
-            self.game_board.player_2_hand.active_philosopher
-        ))
-        .centered()
-        .block(block)
-        .render(area, buf);
+        let (inactive_hand, _inactive_deck) = self
+            .game_board
+            .inactive_player_data()
+            .expect("can't get inactive player data");
+        Paragraph::new(format!("{:?}", inactive_hand.active_philosopher))
+            .centered()
+            .block(block)
+            .render(area, buf);
     }
 
     fn render_player_philosophers(&mut self, area: Rect, buf: &mut Buffer) {
         //  TODO: put actual logic here
         let block = Block::bordered().title(Line::raw("Player Philosophers").centered());
-        Paragraph::new(format!(
-            "{:?}",
-            self.game_board.player_1_hand.active_philosopher
-        ))
-        .centered()
-        .block(block)
-        .render(area, buf);
+        let (active_hand, _active_deck) = self
+            .game_board
+            .active_player_data()
+            .expect("can't get active player data");
+        Paragraph::new(format!("{:?}", active_hand.active_philosopher))
+            .centered()
+            .block(block)
+            .render(area, buf);
     }
 
     fn render_available_cards(&mut self, area: Rect, buf: &mut Buffer) {
         let block = Block::bordered().title(Line::raw("Player Available Cards").centered());
-
-        let available_cards: Vec<AvailablePlayerCard> = self
+        let (active_hand, _active_deck) = self
             .game_board
-            .player_1_hand
+            .active_player_data()
+            .expect("can't get active player data");
+        let available_cards: Vec<AvailablePlayerCard> = active_hand
             .inactive_cards
             .iter()
             .enumerate()
@@ -163,7 +194,7 @@ impl Widget for &mut GameApp {
             ])
             .areas(game_board_area);
 
-        GameApp::render_footer(footer_area, buf);
+        self.render_footer(footer_area, buf);
         self.render_opponent_philosophers(opponent_philosopher, buf);
         self.render_player_philosophers(player_philosopher, buf);
         self.render_available_cards(player_available_cards, buf);
