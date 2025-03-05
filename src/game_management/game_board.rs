@@ -10,10 +10,15 @@ pub enum GamePhase {
 }
 
 #[derive(Debug)]
-struct GameConfig {
+pub struct GameConfig {
     num_cards_played_per_turn: u8,
     num_cards_drawn_per_turn: u8,
     max_cards_in_hand: u8,
+}
+impl GameConfig {
+    pub fn max_cards_in_hand(&self) -> u8 {
+        self.max_cards_in_hand
+    }
 }
 impl Default for GameConfig {
     fn default() -> Self {

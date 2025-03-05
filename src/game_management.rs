@@ -1,4 +1,4 @@
 mod game_board;
 mod helper_functions;
 
-pub use game_board::{GameBoard, GamePhase};
+pub use game_board::{GameBoard, GameConfig, GamePhase};
