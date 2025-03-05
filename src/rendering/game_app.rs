@@ -19,16 +19,17 @@ pub struct GameApp {
     exit: bool,
     game_board: GameBoard,
     current_round: u32,
+    current_card_state: ListState,
 }
 impl GameApp {
     pub fn new() -> Self {
         let mut game_board = GameBoard::new(None);
         let current_player_data = game_board.active_player_data().unwrap();
-        let current_player_hand = CurrentPlayerHand::from_player_hand(current_player_data.0);
         GameApp {
             exit: false,
             game_board,
             current_round: 0,
+            current_card_state: ListState::default(),
         }
     }
 
@@ -62,21 +63,21 @@ impl GameApp {
     }
 
     fn select_previous(&mut self) {
-        // self.current_player_hand.card_state.select_previous();
+        self.current_card_state.select_previous();
     }
 
     fn select_next(&mut self) {
-        // self.current_player_hand.card_state.select_next();
+        self.current_card_state.select_next();
     }
 
     fn toggle_card_selection(&mut self) {
-        todo!()
-        // if let Some(i) = self.current_card_state.selected() {
-        //     self.todo_list.items[i].status = match self.todo_list.items[i].status {
-        //         CardSelectionState::Selected => CardSelectionState::NotSelected,
-        //         CardSelectionState::NotSelected => CardSelectionState::Selected,
-        //     }
-        // }
+        let in_play_hand = self.get_current_player_hand();
+        if let Some(i) = self.current_card_state.selected() {
+            in_play_hand.cards[i].status = match in_play_hand.cards[i].status {
+                CardSelectionState::Selected => CardSelectionState::NotSelected,
+                CardSelectionState::NotSelected => CardSelectionState::Selected,
+            }
+        }
     }
 
     fn submit_card_selections(&mut self) {
