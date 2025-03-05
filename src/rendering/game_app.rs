@@ -11,7 +11,7 @@ use ratatui::{
 };
 
 use crate::game_management::GameBoard;
-use crate::rendering::{AvailablePlayerCard, CardSelectionState, CurrentPlayerHand};
+use crate::rendering::{AvailablePlayerCard, CardSelectionState};
 
 const LIST_HIGHLIGHT_STYLE: Style = Style::new().bg(SLATE.c800).add_modifier(Modifier::BOLD);
 
@@ -20,22 +20,19 @@ pub struct GameApp {
     game_board: GameBoard,
     current_round: u32,
     current_card_state: ListState,
+    selected_cards: Vec<CardSelectionState>,
 }
 impl GameApp {
     pub fn new() -> Self {
         let game_board = GameBoard::new(None);
+        let num_cards = game_board.game_config.max_cards_in_hand();
         GameApp {
             exit: false,
             game_board,
             current_round: 0,
             current_card_state: ListState::default(),
+            selected_cards: vec![CardSelectionState::NotSelected; num_cards.into()],
         }
-    }
-
-    fn get_current_player_hand(&mut self) -> Result<CurrentPlayerHand, Box<dyn std::error::Error>> {
-        let (in_play_hand, _in_play_deck) = self.game_board.active_player_data()?;
-        let current_player_hand = CurrentPlayerHand::from_player_hand(in_play_hand);
-        Ok(current_player_hand)
     }
 
     pub fn run(mut self, mut terminal: DefaultTerminal) -> Result<(), Box<dyn std::error::Error>> {
@@ -73,10 +70,13 @@ impl GameApp {
     }
 
     fn toggle_card_selection(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let selected_card_index = self.current_card_state.selected();
-        let mut in_play_hand = self.get_current_player_hand()?;
-        if let Some(i) = selected_card_index {
-            in_play_hand.toggle_card_state(i);
+        if let Some(i) = self.current_card_state.selected() {
+            if let Some(state) = self.selected_cards.get_mut(i) {
+                *state = match state {
+                    CardSelectionState::NotSelected => CardSelectionState::Selected,
+                    CardSelectionState::Selected => CardSelectionState::NotSelected,
+                };
+            }
         }
         Ok(())
     }
@@ -86,7 +86,7 @@ impl GameApp {
     }
 }
 
-// App rendering logic
+// actual rendering logic
 impl GameApp {
     fn render_footer(area: Rect, buf: &mut Buffer) {
         Paragraph::new(
@@ -121,22 +121,26 @@ impl GameApp {
     }
 
     fn render_available_cards(&mut self, area: Rect, buf: &mut Buffer) {
-        //  TODO: put actual logic here
         let block = Block::bordered().title(Line::raw("Player Available Cards").centered());
+
         let available_cards: Vec<AvailablePlayerCard> = self
             .game_board
             .player_1_hand
             .inactive_cards
             .iter()
-            .map(|card| AvailablePlayerCard {
+            .enumerate()
+            .map(|(i, card)| AvailablePlayerCard {
                 card: card.as_ref(),
-                is_selected: CardSelectionState::NotSelected,
+                is_selected: self
+                    .selected_cards
+                    .get(i)
+                    .copied()
+                    .unwrap_or(CardSelectionState::NotSelected),
             })
             .collect();
-        let list_items: Vec<ListItem> = available_cards
-            .iter()
-            .map(|card| ListItem::from(card))
-            .collect();
+
+        let list_items: Vec<ListItem> = available_cards.iter().map(ListItem::from).collect();
+
         let list = List::new(list_items)
             .block(block)
             .highlight_style(LIST_HIGHLIGHT_STYLE)

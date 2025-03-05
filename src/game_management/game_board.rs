@@ -37,7 +37,7 @@ pub struct GameBoard {
     pub player_2_hand: PlayerHand,
     pub player_2_deck: RemainingDeck,
     pub game_phase: GamePhase,
-    game_config: GameConfig,
+    pub game_config: GameConfig,
 }
 impl GameBoard {
     pub fn new(game_config: Option<GameConfig>) -> Self {
