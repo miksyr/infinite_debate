@@ -4,7 +4,7 @@ use ratatui::{
         Color,
     },
     text::Line,
-    widgets::{ListItem, ListState},
+    widgets::ListItem,
 };
 
 use crate::entities::Card;
@@ -37,10 +37,17 @@ pub enum CardSelectionState {
     Selected,
     NotSelected,
 }
+impl CardSelectionState {
+    fn toggle(&mut self) -> Self {
+        match self {
+            CardSelectionState::Selected => CardSelectionState::NotSelected,
+            CardSelectionState::NotSelected => CardSelectionState::Selected,
+        }
+    }
+}
 
 pub struct CurrentPlayerHand<'a> {
     pub cards: Vec<AvailablePlayerCard<'a>>,
-    pub card_state: ListState,
 }
 impl CurrentPlayerHand<'_> {
     fn convert_to_available_cards(cards: &Vec<Box<Card>>) -> Vec<AvailablePlayerCard> {
@@ -53,11 +60,14 @@ impl CurrentPlayerHand<'_> {
             .collect();
         available_cards
     }
-
     pub fn from_player_hand(player_hand: &PlayerHand) -> CurrentPlayerHand {
         CurrentPlayerHand {
             cards: CurrentPlayerHand::convert_to_available_cards(&player_hand.inactive_cards),
-            card_state: ListState::default(),
+        }
+    }
+    pub fn toggle_card_state(&mut self, card_index: usize) {
+        if let Some(card) = self.cards.get_mut(card_index) {
+            card.is_selected = card.is_selected.toggle();
         }
     }
 }

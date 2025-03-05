@@ -23,8 +23,7 @@ pub struct GameApp {
 }
 impl GameApp {
     pub fn new() -> Self {
-        let mut game_board = GameBoard::new(None);
-        let current_player_data = game_board.active_player_data().unwrap();
+        let game_board = GameBoard::new(None);
         GameApp {
             exit: false,
             game_board,
@@ -33,8 +32,8 @@ impl GameApp {
         }
     }
 
-    fn get_current_player_hand(&mut self) -> Result<CurrentPlayerHand, Box<dyn std::error::Error>> {
-        let current_player_data = self.game_board.active_player_data().unwrap();
+    fn get_current_player_hand(&self) -> Result<CurrentPlayerHand, Box<dyn std::error::Error>> {
+        let current_player_data = self.game_board.active_player_data()?;
         let current_player_hand = CurrentPlayerHand::from_player_hand(current_player_data.0);
         Ok(current_player_hand)
     }
@@ -70,14 +69,12 @@ impl GameApp {
         self.current_card_state.select_next();
     }
 
-    fn toggle_card_selection(&mut self) {
-        let in_play_hand = self.get_current_player_hand();
+    fn toggle_card_selection(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let mut in_play_hand = self.get_current_player_hand()?;
         if let Some(i) = self.current_card_state.selected() {
-            in_play_hand.cards[i].status = match in_play_hand.cards[i].status {
-                CardSelectionState::Selected => CardSelectionState::NotSelected,
-                CardSelectionState::NotSelected => CardSelectionState::Selected,
-            }
+            in_play_hand.toggle_card_state(i);
         }
+        Ok(())
     }
 
     fn submit_card_selections(&mut self) {
