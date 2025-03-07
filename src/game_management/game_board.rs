@@ -68,54 +68,59 @@ impl GameBoard {
         todo!()
     }
 
-    fn apply_effects(&mut self) {
-        let (inactive_hand, _inactive_deck) = self
+    fn apply_effects(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        let (inactive_hand, _) = self
             .inactive_player_data()
             .expect("can't get inactive player for applying effects");
         if let Some(p) = inactive_hand.active_philosopher.as_mut() {
             p.apply_existing_effects();
         }
+        Ok(())
     }
 
-    fn draw_cards_for_next_player(&mut self) {
+    fn draw_cards_for_next_player(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         // extract value below to avoid borrow checker issues with mutable references to self
         let num_cards_per_turn = self.game_config.num_cards_drawn_per_turn;
-        let (inactive_hand, inactive_deck) = self
-            .inactive_player_data()
-            .expect("can't get inactive player for drawing cards");
+        let (inactive_hand, inactive_deck) = self.inactive_player_data()?;
         let num_cards_to_draw = num_cards_per_turn.min(inactive_hand.num_available_slots_in_hand());
-        let new_cards = inactive_deck
-            .draw_new_cards(num_cards_to_draw)
-            .expect("couldn't draw new cards for next player");
-        let _ = inactive_hand.add_cards_to_hand(new_cards);
+        let new_cards = inactive_deck.draw_new_cards(num_cards_to_draw)?;
+        inactive_hand.add_cards_to_hand(new_cards)?;
+        Ok(())
     }
 
     pub fn process_turn(&mut self, cards: Vec<Card>) -> Result<(), Box<dyn std::error::Error>> {
-        self.apply_effects();
+        self.apply_effects()?;
         self.apply_cards(cards)?;
-        self.draw_cards_for_next_player();
+        self.draw_cards_for_next_player()?;
         self.update_game_phase();
         Ok(())
+    }
+
+    fn get_player_data(
+        &mut self,
+        is_active: bool,
+    ) -> Result<(&mut PlayerHand, &mut RemainingDeck), Box<dyn std::error::Error>> {
+        match (&self.game_phase, is_active) {
+            (GamePhase::Player1Turn, true) | (GamePhase::Player2Turn, false) => {
+                Ok((&mut self.player_1_hand, &mut self.player_1_deck))
+            }
+            (GamePhase::Player2Turn, true) | (GamePhase::Player1Turn, false) => {
+                Ok((&mut self.player_2_hand, &mut self.player_2_deck))
+            }
+            _ => Err("bad game phase".into()),
+        }
     }
 
     pub fn active_player_data(
         &mut self,
     ) -> Result<(&mut PlayerHand, &mut RemainingDeck), Box<dyn std::error::Error>> {
-        match self.game_phase {
-            GamePhase::Player1Turn => Ok((&mut self.player_1_hand, &mut self.player_1_deck)),
-            GamePhase::Player2Turn => Ok((&mut self.player_2_hand, &mut self.player_2_deck)),
-            _ => Err("bad game phase".into()),
-        }
+        self.get_player_data(true)
     }
 
     pub fn inactive_player_data(
         &mut self,
     ) -> Result<(&mut PlayerHand, &mut RemainingDeck), Box<dyn std::error::Error>> {
-        match self.game_phase {
-            GamePhase::Player1Turn => Ok((&mut self.player_2_hand, &mut self.player_2_deck)),
-            GamePhase::Player2Turn => Ok((&mut self.player_1_hand, &mut self.player_1_deck)),
-            _ => Err("bad game phase".into()),
-        }
+        self.get_player_data(false)
     }
 
     pub fn apply_cards(&mut self, cards: Vec<Card>) -> Result<(), Box<dyn std::error::Error>> {
