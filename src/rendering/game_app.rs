@@ -1,20 +1,24 @@
 use ratatui::{
     buffer::Buffer,
     crossterm::event::{self, Event, KeyCode, KeyEventKind},
-    layout::{Constraint, Layout, Rect},
-    style::{palette::tailwind::SLATE, Modifier, Style},
-    text::Line,
-    widgets::{
-        Block, HighlightSpacing, List, ListItem, ListState, Paragraph, StatefulWidget, Widget,
+    layout::{Alignment, Constraint, Layout, Rect},
+    style::{
+        palette::tailwind::{GREEN, SLATE},
+        Modifier, Style,
     },
+    text::Line,
+    widgets::{Block, ListState, Paragraph, Widget, Wrap},
     DefaultTerminal,
 };
 
 use crate::entities::Card;
 use crate::game_management::GameBoard;
-use crate::rendering::{AvailablePlayerCard, CardSelectionState};
 
-const LIST_HIGHLIGHT_STYLE: Style = Style::new().bg(SLATE.c800).add_modifier(Modifier::BOLD);
+#[derive(Copy, Clone, PartialEq)]
+pub enum CardSelectionState {
+    Selected,
+    NotSelected,
+}
 
 pub struct GameApp {
     exit: bool,
@@ -52,9 +56,9 @@ impl GameApp {
         }
         match key.code {
             KeyCode::Char('q') | KeyCode::Esc => self.exit = true,
-            KeyCode::Up | KeyCode::Char('w') => self.select_previous(),
-            KeyCode::Down | KeyCode::Char('s') => self.select_next(),
-            KeyCode::Right | KeyCode::Char('d') => self
+            KeyCode::Left | KeyCode::Char('a') => self.select_previous(),
+            KeyCode::Right | KeyCode::Char('d') => self.select_next(),
+            KeyCode::Up | KeyCode::Char('w') => self
                 .toggle_card_selection()
                 .expect("Couldn't toggle card selection"),
             KeyCode::Enter => self.submit_card_selections(),
@@ -63,11 +67,23 @@ impl GameApp {
     }
 
     fn select_previous(&mut self) {
-        self.current_card_state.select_previous();
+        let current = self.current_card_state.selected().unwrap_or(0);
+        let new_selection = if current == 0 {
+            self.selected_cards.len() - 1
+        } else {
+            current - 1
+        };
+        self.current_card_state.select(Some(new_selection));
     }
 
     fn select_next(&mut self) {
-        self.current_card_state.select_next();
+        let current = self.current_card_state.selected().unwrap_or(0);
+        let new_selection = if current == self.selected_cards.len() - 1 {
+            0
+        } else {
+            current + 1
+        };
+        self.current_card_state.select(Some(new_selection));
     }
 
     fn toggle_card_selection(&mut self) -> Result<(), Box<dyn std::error::Error>> {
@@ -158,34 +174,46 @@ impl GameApp {
     }
 
     fn render_available_cards(&mut self, area: Rect, buf: &mut Buffer) {
-        let block = Block::bordered().title(Line::raw("Player Available Cards").centered());
         let (active_hand, _active_deck) = self
             .game_board
             .active_player_data()
             .expect("can't get active player data");
-        let available_cards: Vec<AvailablePlayerCard> = active_hand
-            .inactive_cards
-            .iter()
-            .enumerate()
-            .map(|(i, card)| AvailablePlayerCard {
-                card: card.as_ref(),
-                is_selected: self
-                    .selected_cards
-                    .get(i)
-                    .copied()
-                    .unwrap_or(CardSelectionState::NotSelected),
-            })
-            .collect();
+        let num_cards = active_hand.inactive_cards.len() as u32;
+        if num_cards == 0 {
+            return;
+        }
 
-        let list_items: Vec<ListItem> = available_cards.iter().map(ListItem::from).collect();
+        let constraints = vec![Constraint::Ratio(1, num_cards); num_cards as usize];
+        let card_areas = Layout::horizontal(constraints).split(area);
 
-        let list = List::new(list_items)
-            .block(block)
-            .highlight_style(LIST_HIGHLIGHT_STYLE)
-            .highlight_symbol(">")
-            .highlight_spacing(HighlightSpacing::Always);
+        let hovered_index = self.current_card_state.selected().unwrap_or(0);
+        for (i, card_area) in card_areas.iter().enumerate() {
+            let is_selected = self.selected_cards.get(i) == Some(&CardSelectionState::Selected);
+            let is_hovered = i == hovered_index;
 
-        StatefulWidget::render(list, area, buf, &mut self.current_card_state);
+            let card_block = Block::bordered()
+                .title(Line::raw(format!("Card {}", i + 1)).centered())
+                .style(match (is_selected, is_hovered) {
+                    (true, true) => Style::default()
+                        .fg(SLATE.c100)
+                        .bg(SLATE.c800)
+                        .add_modifier(Modifier::BOLD), // selected & hovered
+                    (true, false) => Style::default().fg(SLATE.c100).bg(GREEN.c800), // selected
+                    (false, true) => Style::default().fg(SLATE.c200).bg(SLATE.c600), // hovered
+                    _ => Style::default(),
+                });
+
+            let card = active_hand
+                .inactive_cards
+                .get(i)
+                .expect("couldn't get inactive card from active hand");
+            let card_text = Paragraph::new(format!("{:?}", card))
+                .block(card_block)
+                .alignment(Alignment::Center)
+                .wrap(Wrap { trim: true });
+
+            card_text.render(*card_area, buf);
+        }
     }
 }
 impl Widget for &mut GameApp {
