@@ -96,7 +96,13 @@ impl GameApp {
 
             if self.selected_cards[i] == CardSelectionState::Selected {
                 self.selected_cards[i] = CardSelectionState::NotSelected;
-            } else if selected_count < 3 {
+            } else if selected_count
+                < self
+                    .game_board
+                    .game_config
+                    .num_cards_played_per_turn()
+                    .into()
+            {
                 self.selected_cards[i] = CardSelectionState::Selected;
             }
         }
