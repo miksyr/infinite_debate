@@ -11,8 +11,9 @@ use ratatui::{
     DefaultTerminal,
 };
 
-use crate::entities::Card;
+use crate::entities::{Card, InPlayPhilosopher, Philosopher};
 use crate::game_management::GameBoard;
+use crate::player::PlayerHand;
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum CardSelectionState {
@@ -100,7 +101,7 @@ impl GameApp {
                 < self
                     .game_board
                     .game_config
-                    .num_cards_played_per_turn()
+                    .max_cards_played_per_turn()
                     .into()
             {
                 self.selected_cards[i] = CardSelectionState::Selected;
@@ -112,6 +113,16 @@ impl GameApp {
     fn reset_card_selection_state(&mut self) {
         let num_cards = self.game_board.game_config.max_cards_in_hand();
         self.selected_cards = vec![CardSelectionState::NotSelected; num_cards.into()];
+    }
+
+    fn has_no_philosopher(
+        selected_cards: &Vec<&Card>,
+        current_philosopher: Option<&InPlayPhilosopher>,
+    ) -> bool {
+        current_philosopher.is_none()
+            && !selected_cards
+                .iter()
+                .any(|card| matches!(card, Card::Philosopher(_) | Card::InPlayPhilosopher(_)))
     }
 
     fn submit_card_selections(&mut self) {
@@ -133,6 +144,11 @@ impl GameApp {
             })
             .collect();
 
+        if GameApp::has_no_philosopher(&selected_cards, active_hand.active_philosopher.as_ref()) {
+            // can't play turn unless there's an active philosopher, or one being played
+            return;
+        }
+
         if !selected_cards.is_empty() {
             let owned_cards: Vec<Card> = selected_cards.into_iter().cloned().collect();
             self.game_board
@@ -143,7 +159,6 @@ impl GameApp {
     }
 }
 
-// actual rendering logic
 impl GameApp {
     fn render_footer(&self, area: Rect, buf: &mut Buffer) {
         Paragraph::new(

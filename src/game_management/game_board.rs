@@ -19,7 +19,7 @@ impl GameConfig {
     pub fn max_cards_in_hand(&self) -> u8 {
         self.max_cards_in_hand
     }
-    pub fn num_cards_played_per_turn(&self) -> u8 {
+    pub fn max_cards_played_per_turn(&self) -> u8 {
         self.num_cards_played_per_turn
     }
 }
