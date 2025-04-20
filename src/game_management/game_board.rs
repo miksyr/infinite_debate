@@ -59,16 +59,28 @@ impl GameBoard {
         }
     }
 
+    pub fn game_phase(&self) -> &GamePhase {
+        &self.game_phase
+    }
+
     fn update_game_phase(&mut self) {
+        self.check_for_game_over();
         match self.game_phase {
             GamePhase::Player1Turn => self.game_phase = GamePhase::Player2Turn,
             GamePhase::Player2Turn => self.game_phase = GamePhase::Player1Turn,
-            GamePhase::GameOver => self.game_over(),
+            GamePhase::GameOver => (),
         }
     }
 
-    fn game_over(&mut self) {
-        todo!()
+    fn check_for_game_over(&mut self) {
+        let (inactive_hand, _) = self
+            .inactive_player_data()
+            .expect("can't get inactive player data to check game over");
+        if let Some(p) = &inactive_hand.active_philosopher {
+            if p.is_dead() {
+                self.game_phase = GamePhase::GameOver
+            }
+        }
     }
 
     fn apply_effects(&mut self) -> Result<(), Box<dyn std::error::Error>> {

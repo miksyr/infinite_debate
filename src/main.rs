@@ -9,5 +9,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let terminal = ratatui::init();
     let app_result = game_app.run(terminal);
     ratatui::restore();
+    println!("Game Over");
     Ok(app_result?)
 }

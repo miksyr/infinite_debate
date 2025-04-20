@@ -11,9 +11,11 @@ use ratatui::{
     DefaultTerminal,
 };
 
-use crate::entities::{Card, InPlayPhilosopher, Philosopher};
 use crate::game_management::GameBoard;
-use crate::player::PlayerHand;
+use crate::{
+    entities::{Card, InPlayPhilosopher},
+    game_management::GamePhase,
+};
 
 #[derive(Copy, Clone, PartialEq)]
 pub enum CardSelectionState {
@@ -125,6 +127,15 @@ impl GameApp {
                 .any(|card| matches!(card, Card::Philosopher(_) | Card::InPlayPhilosopher(_)))
     }
 
+    fn check_for_game_over(&mut self) {
+        match self.game_board.game_phase() {
+            GamePhase::GameOver => {
+                self.exit = true;
+            }
+            _ => (),
+        }
+    }
+
     fn submit_card_selections(&mut self) {
         let (active_hand, _active_deck) = self
             .game_board
@@ -156,6 +167,7 @@ impl GameApp {
                 .expect("couldn't process turn");
         }
         self.reset_card_selection_state();
+        self.check_for_game_over();
     }
 }
 
